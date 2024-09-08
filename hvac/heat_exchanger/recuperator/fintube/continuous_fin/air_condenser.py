@@ -1281,6 +1281,6 @@ class PlainFinTubeCounterFlowAirCondenser:
             Electric power consumed by the condenser fan
         """
         volume_flow_rate = (self.air_m_dot / self.air_in.rho)
-        self.fan.V_dot = volume_flow_rate.to('m ^ 3 / s').magnitude
+        self.fan.V_dot = volume_flow_rate.to('m ^ 3 / h').magnitude
         self.fan.pressure_loss = self.air_dP.to('Pa').magnitude
         return Q_(self.fan.power, 'W')

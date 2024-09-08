@@ -54,7 +54,7 @@ class Fan:
         float
             Electrical power consumption in W
         """
-        return (self.P_el_n * (self.V_dot / self.V_dot_n) +
+        return (self.P_el_n * (self.V_dot / self.V_dot_n) ** 3 +
                 (self.V_dot / 3600.0) * self.pressure_loss / self.eta_fan)
 
     @property

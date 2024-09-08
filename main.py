@@ -7,9 +7,14 @@ warnings.filterwarnings('ignore', category=CoolPropWarning)
 Q_ = Quantity
 
 from hvac.heat_exchanger.recuperator.fintube.continuous_fin import PlainFinTubeCounterFlowAirCondenser as Condenser
+from hvac.heat_exchanger.recuperator.fintube.continuous_fin.fan import Fan
 
 R134a = Fluid('R134a')
-
+fan = Fan(V_dot_n=565,
+          V_dot=565,
+          rpm_n=6000,
+          P_el_n=87.0,
+          eta_fan=0.7)
 condenser = Condenser(
     W_fro=Q_(1.003, 'm'),
     H_fro=Q_(0.334, 'm'),
@@ -20,7 +25,8 @@ condenser = Condenser(
     D_ext=Q_(10.2, 'mm'),         # outer tube diameter
     t_fin=Q_(0.3302, 'mm'),       # fin thickness
     N_fin=1 / Q_(3.175, 'mm'),    # fin density
-    k_fin=Q_(237, 'W / (m * K)')  # conductivity of fin material
+    k_fin=Q_(237, 'W / (m * K)'),  # conductivity of fin material
+    fan = fan
 )
 
 # Refrigerant state at condenser inlet:
