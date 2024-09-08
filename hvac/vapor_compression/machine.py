@@ -90,6 +90,8 @@ class Output:
     REER: Quantity | None = None
     evp_air_dP: Quantity | None = None
     cnd_air_dP: Quantity | None = None
+    P_evp_fan: Quantity | None = None
+    P_cnd_fan: Quantity | None = None
 
     def __post_init__(self):
         self.units: dict[str, tuple[str, int]] = {
@@ -328,8 +330,12 @@ class Output:
                 )
             if self.evp_air_dP is not None:
                 output += f"evp_air_dP = {self.evp_air_dP.to(u_P_air):~P.{d_P_air}f}\n"
+            if self.P_evp_fan:
+                output += f"P_evp_fan = {self.P_evp_fan.to('W'):~P.2f}\n"
             if self.cnd_air_dP is not None:
                 output += f"cnd_air_dP = {self.cnd_air_dP.to(u_P_air):~P.{d_P_air}f}\n"
+            if self.P_cnd_fan:
+                output += f"P_cnd_fan = {self.P_cnd_fan.to('W'):~P.2f}\n"
             return output
         else:
             return 'None'
@@ -658,6 +664,8 @@ class SingleStageVaporCompressionMachine:
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
                     REER=self.evaporator.Q_dot / (
                                 self.compressor.W_dot + self.condenser.P_fan + self.evaporator.P_fan),
+                    P_evp_fan=self.evaporator.P_fan,
+                    P_cnd_fan=self.condenser.P_fan,
                     evp_eps=self.evaporator.eps,
                     cnd_eps=self.condenser.eps,
                     evp_air_dP=self.evaporator.air_dP,
@@ -823,6 +831,8 @@ class SingleStageVaporCompressionMachine:
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
                     REER=self.evaporator.Q_dot / (
                                 self.compressor.W_dot + self.condenser.P_fan + self.evaporator.P_fan),
+                    P_evp_fan=self.evaporator.P_fan,
+                    P_cnd_fan=self.condenser.P_fan,
                     evp_eps=self.evaporator.eps,
                     cnd_eps=self.condenser.eps,
                     evp_air_dP=self.evaporator.air_dP,
