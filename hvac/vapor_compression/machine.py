@@ -31,7 +31,6 @@ from hvac.vapor_compression.refrigerant_lines import (
 Q_ = Quantity
 logger = ModuleLogger.get_logger(__name__)
 
-
 Evaporator = PlainFinTubeCounterFlowAirEvaporator
 Condenser = PlainFinTubeCounterFlowAirCondenser
 Compressor = VariableSpeedCompressor | FixedSpeedCompressor
@@ -282,6 +281,8 @@ class Output:
                 output += f"COP = {self.COP.to('frac'):~P.3f}\n"
             if self.EER is not None:
                 output += f"EER = {self.EER.to('frac'):~P.3f}\n"
+            if self.REER is not None:
+                output += f"EER = {self.REER.to('frac'):~P.3f}\n"
             if self.evp_eps is not None:
                 output += f"evp_eps = {self.evp_eps.to('frac'):~P.4f}\n"
             if self.cnd_eps is not None:
@@ -357,17 +358,17 @@ class SingleStageVaporCompressionMachine:
     """
 
     def __init__(
-        self,
-        evaporator: Evaporator,
-        condenser: Condenser,
-        compressor: Compressor,
-        refrigerant: Fluid,
-        dT_sh: Quantity,
-        n_cmp_min: Quantity | None = None,
-        n_cmp_max: Quantity | None = None,
-        suction_line: SuctionLine | None = None,
-        discharge_line: DischargeLine | None = None,
-        liquid_line: LiquidLine | None = None
+            self,
+            evaporator: Evaporator,
+            condenser: Condenser,
+            compressor: Compressor,
+            refrigerant: Fluid,
+            dT_sh: Quantity,
+            n_cmp_min: Quantity | None = None,
+            n_cmp_max: Quantity | None = None,
+            suction_line: SuctionLine | None = None,
+            discharge_line: DischargeLine | None = None,
+            liquid_line: LiquidLine | None = None
     ) -> None:
         """
         Creates a `SingleStageVaporCompressionMachine` object.
@@ -450,21 +451,22 @@ class SingleStageVaporCompressionMachine:
                     f"relative error = {eb_err[1].to('pct'):~P.2f}"
                 )
             return output
+
         return wrapper
 
     @time_it
     def rate(
-        self,
-        evp_air_in: HumidAir,
-        evp_air_m_dot: Quantity,
-        cnd_air_in: HumidAir,
-        cnd_air_m_dot: Quantity,
-        n_cmp: Quantity | None = None,
-        T_evp_ini: Quantity | None = None,
-        T_cnd_ini: Quantity | None = None,
-        xa_tol: float | None = 0.1,
-        fa_tol: float | None = 0.05,
-        i_max: int = 50,
+            self,
+            evp_air_in: HumidAir,
+            evp_air_m_dot: Quantity,
+            cnd_air_in: HumidAir,
+            cnd_air_m_dot: Quantity,
+            n_cmp: Quantity | None = None,
+            T_evp_ini: Quantity | None = None,
+            T_cnd_ini: Quantity | None = None,
+            xa_tol: float | None = 0.1,
+            fa_tol: float | None = 0.05,
+            i_max: int = 50,
     ) -> Output:
         """
         Determines the steady-state performance of the single-stage vapor
@@ -654,7 +656,8 @@ class SingleStageVaporCompressionMachine:
                     mixture=self.evaporator.rfg_in,
                     COP=self.condenser.Q_dot / self.compressor.W_dot,
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
-                    REER=self.evaporator.Q_dot / (self.compressor.W_dot + self.condenser.P_fan + self.evaporator.P_fan),
+                    REER=self.evaporator.Q_dot / (
+                                self.compressor.W_dot + self.condenser.P_fan + self.evaporator.P_fan),
                     evp_eps=self.evaporator.eps,
                     cnd_eps=self.condenser.eps,
                     evp_air_dP=self.evaporator.air_dP,
@@ -665,16 +668,16 @@ class SingleStageVaporCompressionMachine:
 
     @time_it
     def balance_by_speed(
-        self,
-        evp_air_in: HumidAir,
-        evp_air_m_dot: Quantity,
-        cnd_air_in: HumidAir,
-        cnd_air_m_dot: Quantity,
-        T_evp: Quantity,
-        T_cnd: Quantity,
-        x_tol: float | None = 0.1,
-        r_tol: float | None = None,
-        i_max: int = 20
+            self,
+            evp_air_in: HumidAir,
+            evp_air_m_dot: Quantity,
+            cnd_air_in: HumidAir,
+            cnd_air_m_dot: Quantity,
+            T_evp: Quantity,
+            T_cnd: Quantity,
+            x_tol: float | None = 0.1,
+            r_tol: float | None = None,
+            i_max: int = 20
     ) -> Output:
         """
         Finds the compressor speed for which the mass flow rate of refrigerant
@@ -818,7 +821,8 @@ class SingleStageVaporCompressionMachine:
                     mixture=self.evaporator.rfg_in,
                     COP=self.condenser.Q_dot / self.compressor.W_dot,
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
-                    REER=self.evaporator.Q_dot / (self.compressor.W_dot + self.condenser.P_fan + self.evaporator.P_fan),
+                    REER=self.evaporator.Q_dot / (
+                                self.compressor.W_dot + self.condenser.P_fan + self.evaporator.P_fan),
                     evp_eps=self.evaporator.eps,
                     cnd_eps=self.condenser.eps,
                     evp_air_dP=self.evaporator.air_dP,
@@ -903,14 +907,14 @@ class SingleStageVaporCompressionMachine:
         return dev
 
     def _init(
-        self,
-        evp_air_in: HumidAir,
-        evp_air_m_dot: Quantity,
-        cnd_air_in: HumidAir,
-        cnd_air_m_dot: Quantity,
-        n_cmp: Quantity | None = None,
-        T_evp: Quantity | None = None,
-        T_cnd: Quantity | None = None
+            self,
+            evp_air_in: HumidAir,
+            evp_air_m_dot: Quantity,
+            cnd_air_in: HumidAir,
+            cnd_air_m_dot: Quantity,
+            n_cmp: Quantity | None = None,
+            T_evp: Quantity | None = None,
+            T_cnd: Quantity | None = None
     ) -> None:
         """
         Sets the operating conditions of the machine, when calling method `rate`
@@ -1013,10 +1017,10 @@ class SingleStageVaporCompressionMachine:
         return abs_err, rel_err.to('pct')
 
     def _get_deviation(
-        self,
-        cmp_rfg_m_dot: Quantity,
-        i: int,
-        logger_on: bool = True
+            self,
+            cmp_rfg_m_dot: Quantity,
+            i: int,
+            logger_on: bool = True
     ) -> float:
         """
         Calculates the deviation in a single cycle between the mass flow rate
@@ -1151,14 +1155,14 @@ class SingleStageVaporCompressionMachine:
         return dev.magnitude
 
     def test_rate(
-        self,
-        evp_air_in: HumidAir,
-        evp_air_m_dot: Quantity,
-        cnd_air_in: HumidAir,
-        cnd_air_m_dot: Quantity,
-        n_cmp: Quantity | None = None,
-        T_evp: Quantity | None = None,
-        T_cnd: Quantity | None = None
+            self,
+            evp_air_in: HumidAir,
+            evp_air_m_dot: Quantity,
+            cnd_air_in: HumidAir,
+            cnd_air_m_dot: Quantity,
+            n_cmp: Quantity | None = None,
+            T_evp: Quantity | None = None,
+            T_cnd: Quantity | None = None
     ) -> float:
         """
         For the given operating conditions, returns the absolute value of the
