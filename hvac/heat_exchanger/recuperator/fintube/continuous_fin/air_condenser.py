@@ -977,7 +977,8 @@ class PlainFinTubeCounterFlowAirCondenser:
             D_ext: Quantity,
             t_fin: Quantity,
             N_fin: Quantity,
-            k_fin: Quantity = Q_(237, 'W / (m * K)')
+            k_fin: Quantity = Q_(237, 'W / (m * K)'),
+            fan: Fan = Fan()
     ) -> None:
         """
         Creates the plain fin-tube counter-flow air condenser.
@@ -1052,6 +1053,7 @@ class PlainFinTubeCounterFlowAirCondenser:
         self.eps: Quantity | None = None
         self.dT_sc: Quantity | None = None
         self.air_dP: Quantity | None = None
+        self.fan: Fan = fan
 
     def __fun__(self, L_flow_sub: float, counter: list[int]) -> float:
         """
@@ -1279,6 +1281,6 @@ class PlainFinTubeCounterFlowAirCondenser:
             Electric power consumed by the condenser fan
         """
         volume_flow_rate = (self.air_m_dot / self.air_in.rho)
-        fan = Fan(V_dot=volume_flow_rate.to('m ^ 3 / h').magnitude,
-                  pressure_loss=self.air_dP.to('Pa').magnitude)
-        return Q_(fan.power, 'W')
+        self.fan.V_dot = volume_flow_rate.to('m ^ 3 / s').magnitude
+        self.fan.pressure_loss = self.air_dP.to('Pa').magnitude
+        return Q_(self.fan.power, 'W')

@@ -12,7 +12,6 @@ from .geometry import ContinuousFinStaggeredTubeBank
 from .air_to_water import ExternalSurface
 from hvac.heat_exchanger.recuperator.fintube.continuous_fin.fan import Fan
 
-
 Q_ = Quantity
 
 logger = ModuleLogger.get_logger(__name__)
@@ -35,21 +34,21 @@ class HeatExchangerCore:
     # Continuous plain fin, staggered tube bank.
 
     def __init__(
-        self,
-        width: Quantity,
-        height: Quantity,
-        num_rows: int | None,
-        pitch_trv: Quantity,
-        pitch_lon: Quantity,
-        d_o: Quantity,
-        d_i: Quantity,
-        t_fin: Quantity,
-        fin_density: Quantity,
-        k_fin: Quantity = Q_(237, 'W / (m * K)'),
-        d_r: Quantity | None = None,
-        boiling: bool = False,
-        A_min_tot: Quantity | None = None,
-        N_rows_tot: int | None = None
+            self,
+            width: Quantity,
+            height: Quantity,
+            num_rows: int | None,
+            pitch_trv: Quantity,
+            pitch_lon: Quantity,
+            d_o: Quantity,
+            d_i: Quantity,
+            t_fin: Quantity,
+            fin_density: Quantity,
+            k_fin: Quantity = Q_(237, 'W / (m * K)'),
+            d_r: Quantity | None = None,
+            boiling: bool = False,
+            A_min_tot: Quantity | None = None,
+            N_rows_tot: int | None = None
     ) -> None:
         self.A_min_tot = A_min_tot
         self.N_rows_tot = N_rows_tot
@@ -75,14 +74,14 @@ class HeatExchangerCore:
         self.dP_ext: Quantity | None = None
 
     def hex_properties(
-        self,
-        air_mean: HumidAir,
-        air_in: HumidAir,
-        air_out: HumidAir,
-        rfg_mean: FluidState,
-        air_m_dot: Quantity,
-        rfg_m_dot: Quantity,
-        Q_dot: Quantity
+            self,
+            air_mean: HumidAir,
+            air_in: HumidAir,
+            air_out: HumidAir,
+            rfg_mean: FluidState,
+            air_m_dot: Quantity,
+            rfg_m_dot: Quantity,
+            Q_dot: Quantity
     ) -> dict[str, Quantity | float]:
         self.internal.m_dot = rfg_m_dot
         self.internal.rfg = rfg_mean
@@ -126,7 +125,7 @@ class HeatExchangerCore:
             dev = (T_wall_new - T_wall_).to('K').m
             return dev
 
-        T_int = self.internal.rfg.T.to('K').m    # cold fluid
+        T_int = self.internal.rfg.T.to('K').m  # cold fluid
         T_ext = self.external.air.Tdb.to('K').m  # hot fluid
         if T_ext > T_int:
             sol = optimize.root_scalar(
@@ -208,18 +207,18 @@ class BoilingPhaseInternalSurface(InternalSurface):
 class SuperheatingRegion:
 
     def __init__(
-        self,
-        W_fro: Quantity,
-        H_fro: Quantity,
-        S_trv: Quantity,
-        S_lon: Quantity,
-        D_int: Quantity,
-        D_ext: Quantity,
-        t_fin: Quantity,
-        N_fin: Quantity,
-        k_fin: Quantity,
-        A_min_tot: Quantity,
-        N_rows_tot: int
+            self,
+            W_fro: Quantity,
+            H_fro: Quantity,
+            S_trv: Quantity,
+            S_lon: Quantity,
+            D_int: Quantity,
+            D_ext: Quantity,
+            t_fin: Quantity,
+            N_fin: Quantity,
+            k_fin: Quantity,
+            A_min_tot: Quantity,
+            N_rows_tot: int
     ) -> None:
         """
         Creates the superheating region of the plain fin-tube evaporator.
@@ -282,13 +281,13 @@ class SuperheatingRegion:
         self.L_flow: Quantity | None = None
 
     def __fun__(
-        self,
-        L_flow: float,
-        rfg_m_dot: Quantity,
-        Q_dot: Quantity,
-        air_mean: HumidAir,
-        rfg_mean: FluidState,
-        counter: list[int]
+            self,
+            L_flow: float,
+            rfg_m_dot: Quantity,
+            Q_dot: Quantity,
+            air_mean: HumidAir,
+            rfg_mean: FluidState,
+            counter: list[int]
     ) -> float:
         """
         Calculates the deviation between the heat transfer rate through the
@@ -329,9 +328,9 @@ class SuperheatingRegion:
         return dev.m
 
     def solve(
-        self,
-        rfg_m_dot: Quantity,
-        L_flow_max: Quantity
+            self,
+            rfg_m_dot: Quantity,
+            L_flow_max: Quantity
     ) -> tuple[Quantity, HumidAir]:
         """
         Finds the flow length of the superheating region for a given mass flow
@@ -387,9 +386,9 @@ class SuperheatingRegion:
             return self.L_flow, self.air_out
 
     def _get_fluid_mean_states(
-        self,
-        air_out: HumidAir,
-        rfg_m_dot: FluidState
+            self,
+            air_out: HumidAir,
+            rfg_m_dot: FluidState
     ) -> tuple[HumidAir, FluidState]:
         """
         Determines the mean state of air and refrigerant in the superheating
@@ -484,18 +483,18 @@ class SuperheatingRegion:
 class BoilingRegion:
 
     def __init__(
-        self,
-        W_fro: Quantity,
-        H_fro: Quantity,
-        S_trv: Quantity,
-        S_lon: Quantity,
-        D_int: Quantity,
-        D_ext: Quantity,
-        t_fin: Quantity,
-        N_fin: Quantity,
-        k_fin: Quantity,
-        A_min_tot: Quantity,
-        N_rows_tot: int
+            self,
+            W_fro: Quantity,
+            H_fro: Quantity,
+            S_trv: Quantity,
+            S_lon: Quantity,
+            D_int: Quantity,
+            D_ext: Quantity,
+            t_fin: Quantity,
+            N_fin: Quantity,
+            k_fin: Quantity,
+            A_min_tot: Quantity,
+            N_rows_tot: int
     ) -> None:
         """
         Creates the boiling region of the plain fin-tube evaporator.
@@ -559,12 +558,12 @@ class BoilingRegion:
         self.L_flow: Quantity | None = None
 
     def solve(
-        self,
-        air_in: HumidAir,
-        rfg_m_dot: Quantity,
-        L_flow: Quantity,
-        tol: Quantity = Q_(0.1, 'kg / hr'),
-        i_max: int = 50
+            self,
+            air_in: HumidAir,
+            rfg_m_dot: Quantity,
+            L_flow: Quantity,
+            tol: Quantity = Q_(0.1, 'kg / hr'),
+            i_max: int = 50
     ) -> Quantity:
         """
         Solves for the refrigerant mass flow rate needed to boil the
@@ -810,17 +809,18 @@ class PlainFinTubeCounterFlowAirEvaporator:
     """
 
     def __init__(
-        self,
-        W_fro: Quantity,
-        H_fro: Quantity,
-        N_rows: int,
-        S_trv: Quantity,
-        S_lon: Quantity,
-        D_int: Quantity,
-        D_ext: Quantity,
-        t_fin: Quantity,
-        N_fin: Quantity,
-        k_fin: Quantity = Q_(237, 'W / (m * K)')
+            self,
+            W_fro: Quantity,
+            H_fro: Quantity,
+            N_rows: int,
+            S_trv: Quantity,
+            S_lon: Quantity,
+            D_int: Quantity,
+            D_ext: Quantity,
+            t_fin: Quantity,
+            N_fin: Quantity,
+            k_fin: Quantity = Q_(237, 'W / (m * K)'),
+            fan: Fan = Fan(),
     ) -> None:
         """
         Creates the plain fin-tube counter-flow air evaporator.
@@ -892,6 +892,7 @@ class PlainFinTubeCounterFlowAirEvaporator:
         self.Q_dot_max: Quantity | None = None
         self.eps: Quantity | None = None
         self.air_dP: Quantity | None = None
+        self.fan: Fan = fan
 
     def _guess_rfg_m_dot_max(self) -> Quantity:
         """
@@ -954,12 +955,12 @@ class PlainFinTubeCounterFlowAirEvaporator:
         return dev.m
 
     def solve(
-        self,
-        air_in: HumidAir,
-        air_m_dot: Quantity,
-        rfg_in: FluidState,
-        dT_sh: Quantity,
-        rfg_m_dot_ini: Quantity | None = None
+            self,
+            air_in: HumidAir,
+            air_m_dot: Quantity,
+            rfg_in: FluidState,
+            dT_sh: Quantity,
+            rfg_m_dot_ini: Quantity | None = None
     ) -> Quantity:
         """
         Solves for the refrigerant mass flow rate needed to transform
@@ -1048,7 +1049,7 @@ class PlainFinTubeCounterFlowAirEvaporator:
                 method='secant',
                 x0=0.6 * rfg_m_dot_max,
                 x1=rfg_m_dot_max,
-                xtol=0.01,   # kg/hr
+                xtol=0.01,  # kg/hr
                 rtol=0.001,  # 0.1 %
                 maxiter=20
             )
@@ -1072,8 +1073,8 @@ class PlainFinTubeCounterFlowAirEvaporator:
             self.Q_dot = self.boiling_region.Q_dot + self.superheating_region.Q_dot
             self.air_out = self.boiling_region.air_out
             self.Q_dot_max = (
-                self.boiling_region.Q_dot_max
-                + self.superheating_region.Q_dot_max
+                    self.boiling_region.Q_dot_max
+                    + self.superheating_region.Q_dot_max
             )
             self.eps = self.Q_dot / self.Q_dot_max
             self.air_dP = (
@@ -1094,6 +1095,6 @@ class PlainFinTubeCounterFlowAirEvaporator:
             Electric power consumed by the condenser fan
         """
         volume_flow_rate = (self.air_m_dot / self.air_in.rho)
-        fan = Fan(V_dot=volume_flow_rate.to('m ^ 3 / h').magnitude,
-                  pressure_loss=self.air_dP.to('Pa').magnitude)
-        return Q_(fan.power, 'W')
+        self.fan.V_dot = volume_flow_rate.to('m ^ 3 / s').magnitude
+        self.fan.pressure_loss = self.air_dP.to('Pa').magnitude
+        return Q_(self.fan.power, 'W')
