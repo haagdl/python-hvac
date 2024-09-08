@@ -9,7 +9,7 @@ import hvac.heat_transfer.condensation.flow_condensation as condensing_flow
 from hvac.heat_exchanger.recuperator.general.eps_ntu import CounterFlowHeatExchanger
 from .geometry import ContinuousFinStaggeredTubeBank
 from .air_to_water import ExternalSurface
-
+from hvac.heat_exchanger.recuperator.fintube.continuous_fin.fan import Fan
 
 Q_ = Quantity
 
@@ -37,21 +37,21 @@ class HeatExchangerCore:
     # Continuous plain fin, staggered tube bank.
 
     def __init__(
-        self,
-        width: Quantity,
-        height: Quantity,
-        num_rows: int,
-        pitch_trv: Quantity,
-        pitch_lon: Quantity,
-        d_o: Quantity,
-        d_i: Quantity,
-        t_fin: Quantity,
-        fin_density: Quantity,
-        k_fin: Quantity = Q_(237, 'W / (m * K)'),
-        d_r: Quantity | None = None,
-        condensing: bool = False,
-        A_min_tot: Quantity | None = None,
-        N_rows_tot: int | None = None
+            self,
+            width: Quantity,
+            height: Quantity,
+            num_rows: int,
+            pitch_trv: Quantity,
+            pitch_lon: Quantity,
+            d_o: Quantity,
+            d_i: Quantity,
+            t_fin: Quantity,
+            fin_density: Quantity,
+            k_fin: Quantity = Q_(237, 'W / (m * K)'),
+            d_r: Quantity | None = None,
+            condensing: bool = False,
+            A_min_tot: Quantity | None = None,
+            N_rows_tot: int | None = None
     ) -> None:
         self.A_min_tot = A_min_tot
         self.N_rows_tot = N_rows_tot
@@ -77,13 +77,13 @@ class HeatExchangerCore:
         self.dP_ext: Quantity | None = None
 
     def hex_properties(
-        self,
-        air_mean: HumidAir,
-        air_in: HumidAir,
-        air_out: HumidAir,
-        rfg_mean: FluidState,
-        air_m_dot: Quantity,
-        rfg_m_dot: Quantity,
+            self,
+            air_mean: HumidAir,
+            air_in: HumidAir,
+            air_out: HumidAir,
+            rfg_mean: FluidState,
+            air_m_dot: Quantity,
+            rfg_m_dot: Quantity,
     ) -> dict[str, Quantity | float]:
         self.internal.m_dot = rfg_m_dot
         self.internal.rfg = rfg_mean
@@ -127,7 +127,7 @@ class HeatExchangerCore:
             dev = (T_wall_new - T_wall_).to('K').m
             return dev
 
-        T_int = self.internal.rfg.T.to('K').m   # hot fluid
+        T_int = self.internal.rfg.T.to('K').m  # hot fluid
         T_ext = self.external.air.Tdb.to('K').m  # cold fluid
         if T_int > T_ext:
             sol = optimize.root_scalar(
@@ -200,10 +200,10 @@ class CondensingPhaseInternalSurface(InternalSurface):
 
 
 def _get_lmtd(
-    air_in: HumidAir,
-    air_out: HumidAir,
-    rfg_in: FluidState,
-    rfg_out: FluidState
+        air_in: HumidAir,
+        air_out: HumidAir,
+        rfg_in: FluidState,
+        rfg_out: FluidState
 ) -> Quantity:
     """
     Calculates the LMTD of a heat exchanger.
@@ -228,18 +228,18 @@ def _get_lmtd(
 class DesuperheatingRegion:
 
     def __init__(
-        self,
-        W_fro: Quantity,
-        H_fro: Quantity,
-        S_trv: Quantity,
-        S_lon: Quantity,
-        D_int: Quantity,
-        D_ext: Quantity,
-        t_fin: Quantity,
-        N_fin: Quantity,
-        k_fin: Quantity,
-        A_min_tot: Quantity,
-        N_rows_tot: int
+            self,
+            W_fro: Quantity,
+            H_fro: Quantity,
+            S_trv: Quantity,
+            S_lon: Quantity,
+            D_int: Quantity,
+            D_ext: Quantity,
+            t_fin: Quantity,
+            N_fin: Quantity,
+            k_fin: Quantity,
+            A_min_tot: Quantity,
+            N_rows_tot: int
     ) -> None:
         self.core = HeatExchangerCore(
             width=W_fro,
@@ -256,7 +256,7 @@ class DesuperheatingRegion:
             N_rows_tot=N_rows_tot
         )
         # Known parameters:
-        self.rfg_in: FluidState | None = None   # discharge gas from compressor
+        self.rfg_in: FluidState | None = None  # discharge gas from compressor
         self.rfg_out: FluidState | None = None  # saturated vapor
         self.rfg_m_dot: Quantity | None = None
         self.air_m_dot: Quantity | None = None
@@ -267,11 +267,11 @@ class DesuperheatingRegion:
         self.L_flow: Quantity | None = None
 
     def __fun__(
-        self,
-        L_flow: float,
-        air_mean: HumidAir,
-        rfg_mean: FluidState,
-        counter: list[int]
+            self,
+            L_flow: float,
+            air_mean: HumidAir,
+            rfg_mean: FluidState,
+            counter: list[int]
     ) -> float:
         """
         Calculates a new value for the flow length of the desuperheating region
@@ -319,11 +319,11 @@ class DesuperheatingRegion:
         return dev.magnitude
 
     def __fun__new(
-        self,
-        L_flow: float,
-        air_mean: HumidAir,
-        rfg_mean: FluidState,
-        counter: list[int]
+            self,
+            L_flow: float,
+            air_mean: HumidAir,
+            rfg_mean: FluidState,
+            counter: list[int]
     ) -> float:
         """
         Calculates the heat transfer rate through the heat exchanger core of the
@@ -360,11 +360,11 @@ class DesuperheatingRegion:
         return dev.magnitude
 
     def solve(
-        self,
-        L_flow_max: Quantity,
-        x_tol: float = 0.001,
-        r_tol: float = 0.01,
-        i_max: int = 20
+            self,
+            L_flow_max: Quantity,
+            x_tol: float = 0.001,
+            r_tol: float = 0.01,
+            i_max: int = 20
     ) -> Quantity:
         """
         Returns the flow length of the desuperheating region such that the heat
@@ -488,18 +488,18 @@ class DesuperheatingRegion:
 class CondensingRegion:
 
     def __init__(
-        self,
-        W_fro: Quantity,
-        H_fro: Quantity,
-        S_trv: Quantity,
-        S_lon: Quantity,
-        D_int: Quantity,
-        D_ext: Quantity,
-        t_fin: Quantity,
-        N_fin: Quantity,
-        k_fin: Quantity,
-        A_min_tot: Quantity,
-        N_rows_tot: int
+            self,
+            W_fro: Quantity,
+            H_fro: Quantity,
+            S_trv: Quantity,
+            S_lon: Quantity,
+            D_int: Quantity,
+            D_ext: Quantity,
+            t_fin: Quantity,
+            N_fin: Quantity,
+            k_fin: Quantity,
+            A_min_tot: Quantity,
+            N_rows_tot: int
     ) -> None:
         self.core = HeatExchangerCore(
             width=W_fro,
@@ -517,7 +517,7 @@ class CondensingRegion:
             N_rows_tot=N_rows_tot
         )
         # Known parameters:
-        self.rfg_in: FluidState | None = None   # saturated vapor
+        self.rfg_in: FluidState | None = None  # saturated vapor
         self.rfg_out: FluidState | None = None  # saturated liquid
         self.rfg_m_dot: Quantity | None = None
         self.air_m_dot: Quantity | None = None
@@ -528,11 +528,11 @@ class CondensingRegion:
         self.L_flow: Quantity | None = None
 
     def __fun__(
-        self,
-        L_flow: float,
-        air_mean: HumidAir,
-        rfg_mean: FluidState,
-        counter: list[int]
+            self,
+            L_flow: float,
+            air_mean: HumidAir,
+            rfg_mean: FluidState,
+            counter: list[int]
     ) -> float:
         """
         Calculates a new value for the flow length of the condensing region
@@ -580,11 +580,11 @@ class CondensingRegion:
         return dev.magnitude
 
     def __fun__new(
-        self,
-        L_flow: float,
-        air_mean: HumidAir,
-        rfg_mean: FluidState,
-        counter: list[int]
+            self,
+            L_flow: float,
+            air_mean: HumidAir,
+            rfg_mean: FluidState,
+            counter: list[int]
     ) -> float:
         """
         Calculates the heat transfer rate through the heat exchanger core of the
@@ -622,11 +622,11 @@ class CondensingRegion:
         return dev.magnitude
 
     def solve(
-        self,
-        L_flow_max: Quantity,
-        x_tol: float = 0.001,
-        r_tol: float = 0.01,
-        i_max: int = 20
+            self,
+            L_flow_max: Quantity,
+            x_tol: float = 0.001,
+            r_tol: float = 0.01,
+            i_max: int = 20
     ) -> Quantity:
         """
         Returns the flow length of the condensing region such that the heat
@@ -729,18 +729,18 @@ class CondensingRegion:
 class SubcoolingRegion:
 
     def __init__(
-        self,
-        W_fro: Quantity,
-        H_fro: Quantity,
-        S_trv: Quantity,
-        S_lon: Quantity,
-        D_int: Quantity,
-        D_ext: Quantity,
-        t_fin: Quantity,
-        N_fin: Quantity,
-        k_fin: Quantity,
-        A_min_tot: Quantity,
-        N_rows_tot: int
+            self,
+            W_fro: Quantity,
+            H_fro: Quantity,
+            S_trv: Quantity,
+            S_lon: Quantity,
+            D_int: Quantity,
+            D_ext: Quantity,
+            t_fin: Quantity,
+            N_fin: Quantity,
+            k_fin: Quantity,
+            A_min_tot: Quantity,
+            N_rows_tot: int
     ) -> None:
         self.core = HeatExchangerCore(
             width=W_fro,
@@ -780,10 +780,10 @@ class SubcoolingRegion:
         return rfg_out
 
     def __fun__(
-        self,
-        T_rfg_out: Quantity,
-        L_flow: Quantity,
-        counter: list[int]
+            self,
+            T_rfg_out: Quantity,
+            L_flow: Quantity,
+            counter: list[int]
     ) -> tuple[Quantity, Quantity]:
         """
         Calculates for the given flow length `L_flow` of the subcooling region,
@@ -847,10 +847,10 @@ class SubcoolingRegion:
         return dev, rfg_out_new.T
 
     def solve(
-        self,
-        L_flow: Quantity,
-        tol: Quantity = Q_(0.1, 'K'),
-        i_max: int = 20
+            self,
+            L_flow: Quantity,
+            tol: Quantity = Q_(0.1, 'K'),
+            i_max: int = 20
     ) -> HumidAir:
         """
         For the given subcooling flow length `L_flow`, solve for the output
@@ -888,9 +888,9 @@ class SubcoolingRegion:
             ) from None
 
     def _get_fluid_mean_states(
-        self,
-        air_out: HumidAir,
-        rfg_out: FluidState
+            self,
+            air_out: HumidAir,
+            rfg_out: FluidState
     ) -> tuple[HumidAir, FluidState]:
         """
         Determines the mean state of the air stream and the refrigerant stream
@@ -965,18 +965,19 @@ class PlainFinTubeCounterFlowAirCondenser:
     eps: Quantity
     air_dP: Quantity
     """
+
     def __init__(
-        self,
-        W_fro: Quantity,
-        H_fro: Quantity,
-        N_rows: int,
-        S_trv: Quantity,
-        S_lon: Quantity,
-        D_int: Quantity,
-        D_ext: Quantity,
-        t_fin: Quantity,
-        N_fin: Quantity,
-        k_fin: Quantity = Q_(237, 'W / (m * K)')
+            self,
+            W_fro: Quantity,
+            H_fro: Quantity,
+            N_rows: int,
+            S_trv: Quantity,
+            S_lon: Quantity,
+            D_int: Quantity,
+            D_ext: Quantity,
+            t_fin: Quantity,
+            N_fin: Quantity,
+            k_fin: Quantity = Q_(237, 'W / (m * K)')
     ) -> None:
         """
         Creates the plain fin-tube counter-flow air condenser.
@@ -1036,7 +1037,7 @@ class PlainFinTubeCounterFlowAirCondenser:
         self.L_flow = N_rows * S_lon
 
         # Known parameters:
-        self.rfg_in: FluidState | None = None   # discharge gas from compressor
+        self.rfg_in: FluidState | None = None  # discharge gas from compressor
         self.rfg_m_dot: Quantity | None = None
         self.air_in: HumidAir | None = None
         self.air_m_dot: Quantity | None = None
@@ -1115,15 +1116,15 @@ class PlainFinTubeCounterFlowAirCondenser:
         return dev.m
 
     def solve(
-        self,
-        air_in: HumidAir,
-        air_m_dot: Quantity,
-        rfg_in: FluidState,
-        rfg_m_dot: Quantity,
-        L_flow_sub_min: Quantity = Q_(0.1, 'mm'),
-        x_tol: float = 0.1,
-        r_tol: float = 0.01,
-        i_max: int = 20
+            self,
+            air_in: HumidAir,
+            air_m_dot: Quantity,
+            rfg_in: FluidState,
+            rfg_m_dot: Quantity,
+            L_flow_sub_min: Quantity = Q_(0.1, 'mm'),
+            x_tol: float = 0.1,
+            r_tol: float = 0.01,
+            i_max: int = 20
     ) -> tuple[HumidAir, FluidState]:
         """
         Solves for the operating state of the condenser under the given
@@ -1221,21 +1222,21 @@ class PlainFinTubeCounterFlowAirCondenser:
             self.rfg_out = self.subcooling_region.rfg_out
             self.air_out = self.desuperheating_region.air_out
             self.Q_dot = (
-                self.desuperheating_region.Q_dot
-                + self.condensing_region.Q_dot
-                + self.subcooling_region.Q_dot
+                    self.desuperheating_region.Q_dot
+                    + self.condensing_region.Q_dot
+                    + self.subcooling_region.Q_dot
             )
             self.Q_dot_max = (
-                self.desuperheating_region.Q_dot_max
-                + self.condensing_region.Q_dot_max
-                + self.subcooling_region.Q_dot_max
+                    self.desuperheating_region.Q_dot_max
+                    + self.condensing_region.Q_dot_max
+                    + self.subcooling_region.Q_dot_max
             )
             self.eps = self.Q_dot / self.Q_dot_max
             self.dT_sc = self.T_cnd - self.rfg_out.T
             self.air_dP = (
-                self.desuperheating_region.dP_air
-                + self.condensing_region.dP_air
-                + self.subcooling_region.dP_air
+                    self.desuperheating_region.dP_air
+                    + self.condensing_region.dP_air
+                    + self.subcooling_region.dP_air
             )
             return self.air_out, self.rfg_out
 
@@ -1265,3 +1266,33 @@ class PlainFinTubeCounterFlowAirCondenser:
         self.desuperheating_region.rfg_m_dot = rfg_m_dot
         self.condensing_region.rfg_m_dot = rfg_m_dot
         self.subcooling_region.rfg_m_dot = rfg_m_dot
+
+    @property
+    def P_fan(self) -> Quantity:
+        """Electric power consumption of the condenser fan
+
+        Refer to Fan class for details
+
+        Returns
+        -------
+        Quantity
+            Electric power consumed by the condenser fan
+        """
+        volume_flow_rate = (self.air_m_dot / self.air_in.rho)
+        fan = Fan(V_dot=volume_flow_rate.to('m ^ 3 / h'), pressure_loss=self.air_dP.to('Pa'))
+        return Q_(fan.power, 'W')
+
+
+if __name__ == '__main__':
+    condenser = PlainFinTubeCounterFlowAirCondenser(
+        W_fro=Q_(1.003, 'm'),
+        H_fro=Q_(0.334, 'm'),
+        N_rows=5,
+        S_trv=Q_(25.4, 'mm'),  # vertical distance between tubes
+        S_lon=Q_(22.0, 'mm'),  # horizontal distance between tubes
+        D_int=Q_(8.422, 'mm'),  # inner tube diameter
+        D_ext=Q_(10.2, 'mm'),  # outer tube diameter
+        t_fin=Q_(0.3302, 'mm'),  # fin thickness
+        N_fin=1 / Q_(3.175, 'mm'),  # fin density
+        k_fin=Q_(237, 'W / (m * K)')  # conductivity of fin material
+    )
