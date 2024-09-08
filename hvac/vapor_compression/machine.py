@@ -88,6 +88,7 @@ class Output:
     cnd_eps: Quantity | None = None
     COP: Quantity | None = None
     EER: Quantity | None = None
+    REER: Quantity | None = None
     evp_air_dP: Quantity | None = None
     cnd_air_dP: Quantity | None = None
 
@@ -653,6 +654,7 @@ class SingleStageVaporCompressionMachine:
                     mixture=self.evaporator.rfg_in,
                     COP=self.condenser.Q_dot / self.compressor.W_dot,
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
+                    REER=self.evaporator.Q_dot / (self.compressor.W_dot + self.condenser.P_fan + self.evaporator.P_fan),
                     evp_eps=self.evaporator.eps,
                     cnd_eps=self.condenser.eps,
                     evp_air_dP=self.evaporator.air_dP,
@@ -816,6 +818,7 @@ class SingleStageVaporCompressionMachine:
                     mixture=self.evaporator.rfg_in,
                     COP=self.condenser.Q_dot / self.compressor.W_dot,
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
+                    REER=self.evaporator.Q_dot / (self.compressor.W_dot + self.condenser.P_fan + self.evaporator.P_fan),
                     evp_eps=self.evaporator.eps,
                     cnd_eps=self.condenser.eps,
                     evp_air_dP=self.evaporator.air_dP,
