@@ -282,7 +282,7 @@ class Output:
             if self.EER is not None:
                 output += f"EER = {self.EER.to('frac'):~P.3f}\n"
             if self.REER is not None:
-                output += f"EER = {self.REER.to('frac'):~P.3f}\n"
+                output += f"REER = {self.REER.to('frac'):~P.3f}\n"
             if self.evp_eps is not None:
                 output += f"evp_eps = {self.evp_eps.to('frac'):~P.4f}\n"
             if self.cnd_eps is not None:
