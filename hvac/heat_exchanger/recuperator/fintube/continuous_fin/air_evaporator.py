@@ -10,6 +10,7 @@ from hvac.heat_exchanger.recuperator.general import eps_ntu as dry
 from ...general import eps_ntu_wet as wet
 from .geometry import ContinuousFinStaggeredTubeBank
 from .air_to_water import ExternalSurface
+from hvac.heat_exchanger.recuperator.fintube.continuous_fin.fan import Fan
 
 
 Q_ = Quantity
@@ -1080,3 +1081,19 @@ class PlainFinTubeCounterFlowAirEvaporator:
                     + self.superheating_region.dP_air
             )
             return self.rfg_m_dot
+
+    @property
+    def P_fan(self) -> Quantity:
+        """Electric power consumption of the condenser fan
+
+        Refer to Fan class for details
+
+        Returns
+        -------
+        Quantity
+            Electric power consumed by the condenser fan
+        """
+        volume_flow_rate = (self.air_m_dot / self.air_in.rho)
+        fan = Fan(V_dot=volume_flow_rate.to('m ^ 3 / h').magnitude,
+                  pressure_loss=self.air_dP.to('Pa').magnitude)
+        return Q_(fan.power, 'W')

@@ -1279,20 +1279,6 @@ class PlainFinTubeCounterFlowAirCondenser:
             Electric power consumed by the condenser fan
         """
         volume_flow_rate = (self.air_m_dot / self.air_in.rho)
-        fan = Fan(V_dot=volume_flow_rate.to('m ^ 3 / h'), pressure_loss=self.air_dP.to('Pa'))
+        fan = Fan(V_dot=volume_flow_rate.to('m ^ 3 / h').magnitude,
+                  pressure_loss=self.air_dP.to('Pa').magnitude)
         return Q_(fan.power, 'W')
-
-
-if __name__ == '__main__':
-    condenser = PlainFinTubeCounterFlowAirCondenser(
-        W_fro=Q_(1.003, 'm'),
-        H_fro=Q_(0.334, 'm'),
-        N_rows=5,
-        S_trv=Q_(25.4, 'mm'),  # vertical distance between tubes
-        S_lon=Q_(22.0, 'mm'),  # horizontal distance between tubes
-        D_int=Q_(8.422, 'mm'),  # inner tube diameter
-        D_ext=Q_(10.2, 'mm'),  # outer tube diameter
-        t_fin=Q_(0.3302, 'mm'),  # fin thickness
-        N_fin=1 / Q_(3.175, 'mm'),  # fin density
-        k_fin=Q_(237, 'W / (m * K)')  # conductivity of fin material
-    )
