@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 
 class Fan:
 
-    def __init__(self, V_dot_0Pa: float, dp_max: float, P_max: float):
+    def __init__(self, V_dot_0Pa: float = 1063.0, dp_max: float = 500.0, P_max: float = 110.0):
         """Initialize a fan object based on nominal values from datasheet
 
         The fan model assumes that the maximum volume flow rate is reached at 0 Pa pressure loss.
