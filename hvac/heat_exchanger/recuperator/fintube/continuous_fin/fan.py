@@ -73,3 +73,4 @@ if __name__ == '__main__':
     fan = Fan(pressure_loss=10.0)
     print(f'Power: {fan.power} W')
     print(f'Speed: {fan.speed} rpm')
+
