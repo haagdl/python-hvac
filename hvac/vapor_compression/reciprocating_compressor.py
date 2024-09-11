@@ -89,13 +89,13 @@ class ReciprocatingCompressor:
         return m_dot
 
     @property
-    def Wc_dot(self) -> Quantity:
+    def W_dot(self) -> Quantity:
         """Get compressor power at given working conditions."""
         e = self.n / (self.n - 1)
         a = self.eta_vol * self.speed * self.V_dis * self.P_evp * e
         b = (self.P_cnd / self.P_evp) ** (1 / e) - 1
-        Wc_dot = a * b
-        return Wc_dot
+        W_dot = a * b
+        return W_dot
 
     @property
     def suction_gas(self) -> FluidState:
@@ -120,15 +120,15 @@ class ReciprocatingCompressor:
         return self.Refrigerant(P=self.P_cnd, rho=1 / self.v_dis)
 
     @property
-    def Qc_dot(self) -> Quantity:
+    def Q_dot(self) -> Quantity:
         """Get cooling capacity of compressor at given working conditions."""
         condenser_out = self.Refrigerant(P=self.P_cnd, x=Q_(0, 'frac'))
         evaporator_in = self.Refrigerant(P=self.P_evp, h=condenser_out.h)
         evaporator_out = self.Refrigerant(P=self.P_evp, rho=1 / self.v_suc)
-        Qc_dot = self.m_dot * (evaporator_out.h - evaporator_in.h)
-        return Qc_dot
+        Q_dot = self.m_dot * (evaporator_out.h - evaporator_in.h)
+        return Q_dot
 
     @property
     def COP(self) -> Quantity:
         """Get COP of compressor under given working conditions."""
-        return self.Qc_dot / self.Wc_dot
+        return self.Q_dot / self.W_dot
