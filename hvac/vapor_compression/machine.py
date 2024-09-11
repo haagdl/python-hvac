@@ -642,11 +642,11 @@ class SingleStageVaporCompressionMachine:
                     'm^3 / h')
                 V_dot_evp: float = (self.evaporator.air_m_dot / self.evaporator.air_out.rho).to(
                     'm^3 / h')
-                signal_fan_cnd: float = self.condenser.fan.signal(V_dot_cnd, self.condenser.air_dP)
+                signal_fan_cnd: float = self.condenser.fan.signal(V_dot_cnd, self.condenser.air_dP.to('Pa'))
                 P_cnd_fan: Quantity = Q_(
                     self.condenser.fan.P(signal_fan_cnd, self.condenser.air_dP), 'W')
                 signal_fan_evp: Quantity = self.evaporator.fan.signal(V_dot_evp,
-                                                                      self.evaporator.air_dP)
+                                                                      self.evaporator.air_dP.to('Pa'))
                 P_evp_fan: Quantity = Q_(
                     self.evaporator.fan.P(signal_fan_evp, self.evaporator.air_dP), 'W')
                 self.output = Output(
@@ -820,11 +820,11 @@ class SingleStageVaporCompressionMachine:
                     'm^3 / h')
                 V_dot_evp: float = (self.evaporator.air_m_dot / self.evaporator.air_out.rho).to(
                     'm^3 / h')
-                signal_fan_cnd: float = self.condenser.fan.signal(V_dot_cnd, self.condenser.air_dP)
+                signal_fan_cnd: float = self.condenser.fan.signal(V_dot_cnd, self.condenser.air_dP.to('Pa'))
                 P_cnd_fan: Quantity = Q_(
                     self.condenser.fan.P(signal_fan_cnd, self.condenser.air_dP), 'W')
                 signal_fan_evp: Quantity = self.evaporator.fan.signal(V_dot_evp,
-                                                                      self.evaporator.air_dP)
+                                                                      self.evaporator.air_dP.to('Pa'))
                 P_evp_fan: Quantity = Q_(
                     self.evaporator.fan.P(signal_fan_evp, self.evaporator.air_dP), 'W')
                 self.output = Output(
