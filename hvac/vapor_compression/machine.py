@@ -5,6 +5,7 @@ compression machine.
 from dataclasses import dataclass
 import functools
 import time
+from platform import machine
 
 import numpy as np
 from scipy import optimize
@@ -88,6 +89,7 @@ class Output:
     COP: Quantity | None = None
     EER: Quantity | None = None
     REER: Quantity | None = None
+    Q_dot_c: Quantity | None = None
     evp_air_dP: Quantity | None = None
     cnd_air_dP: Quantity | None = None
     P_evp_fan: Quantity | None = None
@@ -285,6 +287,8 @@ class Output:
                 output += f"EER = {self.EER.to('frac'):~P.3f}\n"
             if self.REER is not None:
                 output += f"REER = {self.REER.to('frac'):~P.3f}\n"
+            if self.Q_dot_c is not None:
+                output += f"Q_dot_c = {self.Q_dot_c.to('kW'):~P.3f}\n"
             if self.evp_eps is not None:
                 output += f"evp_eps = {self.evp_eps.to('frac'):~P.4f}\n"
             if self.cnd_eps is not None:
@@ -374,7 +378,8 @@ class SingleStageVaporCompressionMachine:
             n_cmp_max: Quantity | None = None,
             suction_line: SuctionLine | None = None,
             discharge_line: DischargeLine | None = None,
-            liquid_line: LiquidLine | None = None
+            liquid_line: LiquidLine | None = None,
+            controller_dissipation: Quantity | None = Q_(0.0, 'W')
     ) -> None:
         """
         Creates a `SingleStageVaporCompressionMachine` object.
@@ -425,6 +430,8 @@ class SingleStageVaporCompressionMachine:
         self.cnd_air_in: HumidAir | None = None
         self.cnd_air_m_dot: Quantity | None = None
         self.n_cmp: Quantity | None = None
+
+        self.controller_dissipation = controller_dissipation
 
         self.output: Output | None = None
 
@@ -638,8 +645,10 @@ class SingleStageVaporCompressionMachine:
                 self.output.success = False
                 return self.output
             else:
-                V_dot_cnd: float = (self.condenser.air_m_dot / self.condenser.air_out.rho).to('m^3 / h').magnitude
-                V_dot_evp: float = (self.evaporator.air_m_dot / self.evaporator.air_out.rho).to('m^3 / h').magnitude
+                V_dot_cnd: float = (self.condenser.air_m_dot / self.condenser.air_out.rho).to(
+                    'm^3 / h').magnitude
+                V_dot_evp: float = (self.evaporator.air_m_dot / self.evaporator.air_out.rho).to(
+                    'm^3 / h').magnitude
                 dp_cnd: float = self.condenser.air_dP.to('Pa').magnitude
                 dp_evp: float = self.evaporator.air_dP.to('Pa').magnitude
                 signal_fan_cnd: float = self.condenser.fan.signal(V_dot_cnd, dp_cnd)
@@ -671,7 +680,9 @@ class SingleStageVaporCompressionMachine:
                     COP=self.condenser.Q_dot / self.compressor.W_dot,
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
                     REER=self.evaporator.Q_dot / (
-                            self.compressor.W_dot + P_cnd_fan + P_evp_fan),
+                            self.compressor.W_dot + P_cnd_fan + P_evp_fan +
+                            self.controller_dissipation),
+                    Q_dot_c=Q_(self.evaporator.Q_dot - P_evp_fan, 'W'),
                     P_evp_fan=P_evp_fan,
                     P_cnd_fan=P_cnd_fan,
                     evp_eps=self.evaporator.eps,
@@ -813,8 +824,10 @@ class SingleStageVaporCompressionMachine:
                     f"Speed balancing finished after {counter[0]} iterations with "
                     f"message: {res.flag}"
                 )
-                V_dot_cnd: float = (self.condenser.air_m_dot / self.condenser.air_out.rho).to('m^3 / h').magnitude
-                V_dot_evp: float = (self.evaporator.air_m_dot / self.evaporator.air_out.rho).to('m^3 / h').magnitude
+                V_dot_cnd: float = (self.condenser.air_m_dot / self.condenser.air_out.rho).to(
+                    'm^3 / h').magnitude
+                V_dot_evp: float = (self.evaporator.air_m_dot / self.evaporator.air_out.rho).to(
+                    'm^3 / h').magnitude
                 dp_cnd: float = self.condenser.air_dP.to('Pa').magnitude
                 dp_evp: float = self.evaporator.air_dP.to('Pa').magnitude
                 signal_fan_cnd: float = self.condenser.fan.signal(V_dot_cnd, dp_cnd)
@@ -846,7 +859,9 @@ class SingleStageVaporCompressionMachine:
                     COP=self.condenser.Q_dot / self.compressor.W_dot,
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
                     REER=self.evaporator.Q_dot / (
-                            self.compressor.W_dot + P_cnd_fan + P_evp_fan),
+                            self.compressor.W_dot + P_cnd_fan + P_evp_fan +
+                            self.controller_dissipation),
+                    Q_dot_c=Q_(self.condenser.Q_dot - P_evp_fan, 'W'),
                     P_evp_fan=P_evp_fan,
                     P_cnd_fan=P_cnd_fan,
                     evp_eps=self.evaporator.eps,
