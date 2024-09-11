@@ -749,7 +749,7 @@ class SingleStageVaporCompressionMachine:
         -------
         Object of class `Output`.
         """
-        c1 = isinstance(self.compressor, VariableSpeedCompressor|ReciprocatingCompressor)
+        c1 = isinstance(self.compressor, VariableSpeedCompressor | ReciprocatingCompressor)
         c2 = (self.n_cmp_min is not None) and (self.n_cmp_max is not None)
         if c1 and c2:
             logger.info(
@@ -913,10 +913,12 @@ class SingleStageVaporCompressionMachine:
         T_evp = Q_(unknowns[0], 'degC')
         T_cnd = Q_(unknowns[1], 'degC')
         if isinstance(self.compressor, ReciprocatingCompressor):
-            cmp_rfg_in = self.refrigerant(T=T_evp.to('K') + self.dT_sh.to('K'), x=Q_(1.0, 'frac'))
+            cmp_rfg_in_ = self.refrigerant(T=T_evp.to('K'), x=Q_(1.0, 'frac'))
             cnd_rfg_sat_in = self.refrigerant(T=T_cnd.to('K'), x=Q_(1.0, 'frac'))
-            self.compressor.P_evp = cmp_rfg_in.P
+            self.compressor.P_evp = cmp_rfg_in_.P
             self.compressor.P_cnd = cnd_rfg_sat_in.P
+            cmp_rfg_in = self.refrigerant(T=T_evp.to('K') + self.dT_sh.to('K'),
+                                          P=cmp_rfg_in_.P.to('Pa'))
             self.compressor.v_suc = cmp_rfg_in.rho ** -1
         logger.info(
             f"Iteration {i + 1}: "
