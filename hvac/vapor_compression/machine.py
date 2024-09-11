@@ -29,6 +29,8 @@ from hvac.vapor_compression.refrigerant_lines import (
     LiquidLine
 )
 
+from hvac.vapor_compression.reciprocating_compressor import ReciprocatingCompressor
+
 Q_ = Quantity
 logger = ModuleLogger.get_logger(__name__)
 
@@ -903,7 +905,12 @@ class SingleStageVaporCompressionMachine:
         i = counter[0]
         T_evp = Q_(unknowns[0], 'degC')
         T_cnd = Q_(unknowns[1], 'degC')
-
+        if isinstance(self.compressor, ReciprocatingCompressor):
+            cmp_rfg_in = self.refrigerant(T=T_evp.to('K') + self.dT_sh.to('K'), x=Q_(1.0, 'frac'))
+            cnd_rfg_sat_in = self.refrigerant(T=T_cnd.to('K'), x=Q_(1.0, 'frac'))
+            self.compressor.P_evp = cmp_rfg_in.P
+            self.compressor.P_cnd = cnd_rfg_sat_in.P
+            self.compressor.v_suc = cmp_rfg_in.rho ** -1
         logger.info(
             f"Iteration {i + 1}: "
             f"Try with: T_evp = {T_evp:~P.3f}, T_cnd = {T_cnd:~P.3f}"

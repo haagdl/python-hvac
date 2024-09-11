@@ -42,29 +42,29 @@ class ReciprocatingCompressor:
         self.n = n
         self.Refrigerant = refrigerant_type
 
-        self._Pc: Quantity = None
-        self._Pe: Quantity = None
+        self._P_cnd: Quantity = None
+        self._P_evp: Quantity = None
         self._v_suc: Quantity = None
 
     @property
-    def Pc(self) -> Quantity:
+    def P_cnd(self) -> Quantity:
         """Get condenser pressure."""
-        return self._Pc
+        return self._P_cnd
 
-    @Pc.setter
-    def Pc(self, v: Quantity) -> None:
+    @P_cnd.setter
+    def P_cnd(self, v: Quantity) -> None:
         """Set condenser pressure."""
-        self._Pc = v
+        self._P_cnd = v
 
     @property
-    def Pe(self) -> Quantity:
+    def P_evp(self) -> Quantity:
         """Get evaporator pressure."""
-        return self._Pe
+        return self._P_evp
 
-    @Pe.setter
-    def Pe(self, v: Quantity) -> None:
+    @P_evp.setter
+    def P_evp(self, v: Quantity) -> None:
         """Set evaporator pressure."""
-        self._Pe = v
+        self._P_evp = v
 
     @property
     def v_suc(self) -> Quantity:
@@ -79,7 +79,7 @@ class ReciprocatingCompressor:
     @property
     def eta_vol(self) -> Quantity:
         """Get clearance volumetric efficiency at given working conditions."""
-        eta_vol = 1 + self.C - self.C * (self.Pc / self.Pe) ** (1 / self.n)
+        eta_vol = 1 + self.C - self.C * (self.P_cnd / self.P_evp) ** (1 / self.n)
         return eta_vol
 
     @property
@@ -92,39 +92,39 @@ class ReciprocatingCompressor:
     def Wc_dot(self) -> Quantity:
         """Get compressor power at given working conditions."""
         e = self.n / (self.n - 1)
-        a = self.eta_vol * self.speed * self.V_dis * self.Pe * e
-        b = (self.Pc / self.Pe) ** (1 / e) - 1
+        a = self.eta_vol * self.speed * self.V_dis * self.P_evp * e
+        b = (self.P_cnd / self.P_evp) ** (1 / e) - 1
         Wc_dot = a * b
         return Wc_dot
 
     @property
     def suction_gas(self) -> FluidState:
         """Get state of suction gas at compressor inlet."""
-        return self.Refrigerant(P=self.Pe, rho=1 / self.v_suc)
+        return self.Refrigerant(P=self.P_evp, rho=1 / self.v_suc)
 
     @suction_gas.setter
     def suction_gas(self, refrigerant: FluidState) -> None:
         """Set state of suction gas at compressor inlet."""
-        self.Pe = refrigerant.P
+        self.P_evp = refrigerant.P
         self.v_suc = 1 / refrigerant.rho
 
     @property
     def v_dis(self) -> Quantity:
         """Get specific volume of discharge gas at compressor outlet."""
-        v_dis = (self.Pe * (self.v_suc ** self.n) / self.Pc) ** (1 / self.n)
+        v_dis = (self.P_evp * (self.v_suc ** self.n) / self.P_cnd) ** (1 / self.n)
         return v_dis
 
     @property
     def discharge_gas(self) -> FluidState:
         """Get state of discharge gas at compressor outlet."""
-        return self.Refrigerant(P=self.Pc, rho=1 / self.v_dis)
+        return self.Refrigerant(P=self.P_cnd, rho=1 / self.v_dis)
 
     @property
     def Qc_dot(self) -> Quantity:
         """Get cooling capacity of compressor at given working conditions."""
-        condenser_out = self.Refrigerant(P=self.Pc, x=Q_(0, 'frac'))
-        evaporator_in = self.Refrigerant(P=self.Pe, h=condenser_out.h)
-        evaporator_out = self.Refrigerant(P=self.Pe, rho=1 / self.v_suc)
+        condenser_out = self.Refrigerant(P=self.P_cnd, x=Q_(0, 'frac'))
+        evaporator_in = self.Refrigerant(P=self.P_evp, h=condenser_out.h)
+        evaporator_out = self.Refrigerant(P=self.P_evp, rho=1 / self.v_suc)
         Qc_dot = self.m_dot * (evaporator_out.h - evaporator_in.h)
         return Qc_dot
 
