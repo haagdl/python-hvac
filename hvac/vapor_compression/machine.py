@@ -749,7 +749,7 @@ class SingleStageVaporCompressionMachine:
         -------
         Object of class `Output`.
         """
-        c1 = isinstance(self.compressor, VariableSpeedCompressor)
+        c1 = isinstance(self.compressor, VariableSpeedCompressor|ReciprocatingCompressor)
         c2 = (self.n_cmp_min is not None) and (self.n_cmp_max is not None)
         if c1 and c2:
             logger.info(
@@ -787,6 +787,13 @@ class SingleStageVaporCompressionMachine:
             n_cmp_max = self.n_cmp_max.to('1 / min').m
             counter = [0]
             try:
+                if isinstance(self.compressor, ReciprocatingCompressor):
+                    cmp_rfg_in = self.refrigerant(T=T_evp.to('K') + self.dT_sh.to('K'),
+                                                  x=Q_(1.0, 'frac'))
+                    cnd_rfg_sat_in = self.refrigerant(T=T_cnd.to('K'), x=Q_(1.0, 'frac'))
+                    self.compressor.P_evp = cmp_rfg_in.P
+                    self.compressor.P_cnd = cnd_rfg_sat_in.P
+                    self.compressor.v_suc = cmp_rfg_in.rho ** -1
                 res = optimize.root_scalar(
                     self.__fun_balance__,
                     args=(counter,),
