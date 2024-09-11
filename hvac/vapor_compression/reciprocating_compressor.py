@@ -20,7 +20,9 @@ class ReciprocatingCompressor:
         C: Quantity,
         speed: Quantity,
         n: float,
-        refrigerant_type: Fluid
+        refrigerant_type: Fluid,
+        eta_is: Quantity = Q_(0.8, 'frac'),
+        eta_mech: Quantity = Q_(0.9, 'frac'),
     ) -> None:
         """
         Parameters
@@ -35,12 +37,29 @@ class ReciprocatingCompressor:
             Polytropic exponent.
         refrigerant_type: Type[Refrigerant]
             Type of refrigerant.
+    eta_is: Quantity
+        Isentropic efficiency: The ratio of the actual work required for compression to the ideal
+        isentropic work (i.e., the work required if the compression process were isentropic).
+        This efficiency accounts for deviations from ideal behavior due to irreversibilities
+        such as heat transfer, friction, and other real-world losses during the compression process.
+        It reflects how close the actual compression process is to an ideal isentropic process.
+        (default is 0.8)
+    eta_mech: Quantity
+        Mechanical efficiency: The ratio of the actual work delivered by the compressor to the
+        total input work provided to the compressor. This accounts for mechanical losses such as
+        friction in the moving parts (e.g., pistons, bearings, valves) and energy dissipation due to
+        imperfect mechanical transmission. Mechanical efficiency represents how effectively the
+        compressor converts the input work into useful work for compressing the refrigerant.
+        (default is 0.9)
         """
         self.V_dis = V_dis
         self.C = C
         self.speed = speed
         self.n = n
         self.Refrigerant = refrigerant_type
+
+        self.eta_is = eta_is
+        self.eta_mech = eta_mech
 
         self._P_cnd: Quantity = None
         self._P_evp: Quantity = None
@@ -95,7 +114,7 @@ class ReciprocatingCompressor:
         a = self.eta_vol * self.speed * self.V_dis * self.P_evp * e
         b = (self.P_cnd / self.P_evp) ** (1 / e) - 1
         W_dot = a * b
-        return W_dot
+        return W_dot / (self.eta_is * self.eta_mech)
 
     @property
     def suction_gas(self) -> FluidState:
