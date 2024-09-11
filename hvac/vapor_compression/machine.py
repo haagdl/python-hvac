@@ -682,7 +682,7 @@ class SingleStageVaporCompressionMachine:
                     REER=self.evaporator.Q_dot / (
                             self.compressor.W_dot + P_cnd_fan + P_evp_fan +
                             self.controller_dissipation),
-                    Q_dot_c=Q_(self.evaporator.Q_dot - P_evp_fan, 'W'),
+                    Q_dot_c=self.evaporator.Q_dot - P_evp_fan,
                     P_evp_fan=P_evp_fan,
                     P_cnd_fan=P_cnd_fan,
                     evp_eps=self.evaporator.eps,
@@ -861,7 +861,7 @@ class SingleStageVaporCompressionMachine:
                     REER=self.evaporator.Q_dot / (
                             self.compressor.W_dot + P_cnd_fan + P_evp_fan +
                             self.controller_dissipation),
-                    Q_dot_c=Q_(self.condenser.Q_dot - P_evp_fan, 'W'),
+                    Q_dot_c=self.evaporator.Q_dot - P_evp_fan,
                     P_evp_fan=P_evp_fan,
                     P_cnd_fan=P_cnd_fan,
                     evp_eps=self.evaporator.eps,
