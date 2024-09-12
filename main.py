@@ -43,7 +43,10 @@ compressor = ReciprocatingCompressor(
     C=Q_(0.02, 'frac'),
     speed=Q_(50, '1 / s'),
     n=Q_(1.2, 'dimensionless'),
-    refrigerant_type=R134a
+    refrigerant=R134a,
+    eta_is=Q_(1.0, 'frac'),
+    eta_mech=Q_(1.0, 'frac'),
+    eta_el=Q_(1.0, 'frac'),
 )
 
 machine = SingleStageVaporCompressionMachine(
@@ -61,27 +64,24 @@ evp_air_m_dot = Q_(200, 'm^3/h') * evp_air_in.rho
 cnd_air_in = HumidAir(Tdb=Q_(35.0, 'degC'),
                       RH=Q_(50.0, 'pct'))
 cnd_air_m_dot = Q_(1000.0, 'm^3/h') * cnd_air_in.rho
-T_evp_ini = Q_(10.0, 'degC')
-T_cnd_ini = Q_(60.0, 'degC')
-# output = machine.rate(
-#     evp_air_in=evp_air_in,
-#     evp_air_m_dot=evp_air_m_dot,
-#     cnd_air_in=cnd_air_in,
-#     cnd_air_m_dot=cnd_air_m_dot,
-#     n_cmp=Q_(25, '1 / s'),
-#     T_evp_ini=T_evp_ini,
-#     T_cnd_ini=T_cnd_ini,
-# )
-output = machine.balance_by_speed(
+T_evp_ini = Q_(8.614, 'degC')
+T_cnd_ini = Q_(67.942, 'degC')
+output = machine.rate(
     evp_air_in=evp_air_in,
     evp_air_m_dot=evp_air_m_dot,
     cnd_air_in=cnd_air_in,
     cnd_air_m_dot=cnd_air_m_dot,
-    T_evp=T_evp_ini,
-    T_cnd=T_cnd_ini,
-
+    n_cmp=Q_(50, '1 / s'),
+    T_evp_ini=T_evp_ini,
+    T_cnd_ini=T_cnd_ini,
 )
+print(output.to_text())
 
-
-
-
+# output = machine.balance_by_speed(
+#     evp_air_in=evp_air_in,
+#     evp_air_m_dot=evp_air_m_dot,
+#     cnd_air_in=cnd_air_in,
+#     cnd_air_m_dot=cnd_air_m_dot,
+#     T_evp=T_evp_ini,
+#     T_cnd=T_cnd_ini,
+# )

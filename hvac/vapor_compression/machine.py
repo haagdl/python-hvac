@@ -381,6 +381,7 @@ class SingleStageVaporCompressionMachine:
             suction_line: SuctionLine | None = None,
             discharge_line: DischargeLine | None = None,
             liquid_line: LiquidLine | None = None,
+            eta_el: Quantity = Q_(1.0, 'frac'),
             controller_dissipation: Quantity | None = Q_(0.0, 'W')
     ) -> None:
         """
@@ -433,6 +434,7 @@ class SingleStageVaporCompressionMachine:
         self.cnd_air_m_dot: Quantity | None = None
         self.n_cmp: Quantity | None = None
 
+        self.eta_el = eta_el
         self.controller_dissipation = controller_dissipation
 
         self.output: Output | None = None
@@ -682,7 +684,7 @@ class SingleStageVaporCompressionMachine:
                     COP=self.condenser.Q_dot / self.compressor.W_dot,
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
                     REER=self.evaporator.Q_dot / (
-                            self.compressor.W_dot + P_cnd_fan + P_evp_fan +
+                            self.compressor.W_dot / self.eta_el + P_cnd_fan + P_evp_fan +
                             self.controller_dissipation),
                     Q_dot_c=self.evaporator.Q_dot - P_evp_fan,
                     P_evp_fan=P_evp_fan,
@@ -868,7 +870,7 @@ class SingleStageVaporCompressionMachine:
                     COP=self.condenser.Q_dot / self.compressor.W_dot,
                     EER=self.evaporator.Q_dot / self.compressor.W_dot,
                     REER=self.evaporator.Q_dot / (
-                            self.compressor.W_dot + P_cnd_fan + P_evp_fan +
+                            self.compressor.W_dot / self.eta_el + P_cnd_fan + P_evp_fan +
                             self.controller_dissipation),
                     Q_dot_c=self.evaporator.Q_dot - P_evp_fan,
                     P_evp_fan=P_evp_fan,
@@ -914,11 +916,10 @@ class SingleStageVaporCompressionMachine:
         T_cnd = Q_(unknowns[1], 'degC')
         if isinstance(self.compressor, ReciprocatingCompressor):
             cmp_rfg_in_ = self.refrigerant(T=T_evp.to('K'), x=Q_(1.0, 'frac'))
-            cnd_rfg_sat_in = self.refrigerant(T=T_cnd.to('K'), x=Q_(1.0, 'frac'))
-            self.compressor.P_evp = cmp_rfg_in_.P
-            self.compressor.P_cnd = cnd_rfg_sat_in.P
-            cmp_rfg_in = self.refrigerant(T=T_evp.to('K') + self.dT_sh.to('K'),
-                                          P=cmp_rfg_in_.P.to('Pa'))
+            cmp_rfg_in = self.refrigerant(P=cmp_rfg_in_.P, T=T_evp.to('K') + self.dT_sh)
+            cnd_rfg_sat = self.refrigerant(T=T_cnd.to('K'), x=Q_(1.0, 'frac'))
+            self.compressor.P_evp = cmp_rfg_in.P
+            self.compressor.P_cnd = cnd_rfg_sat.P
             self.compressor.v_suc = cmp_rfg_in.rho ** -1
         logger.info(
             f"Iteration {i + 1}: "
