@@ -74,18 +74,14 @@ class Fan:
         -------
         float
             Electrical power consumption in W
-
-        Raises
-        ------
-        ValueError
-            If pressure difference is greater than maximum pressure difference or
-            signal is not in range [0, 1]
         """
         _ = dp
         if dp > self.dp_max:
             raise ValueError('Pressure difference is greater than maximum pressure difference')
         if not 0 <= signal <= 1:
-            raise ValueError('Signal is not in range [0, 1]')
+            print(f'FanWarning: Signal {round(signal, 2)} is clipped to [0, 1]!')
+            print('Real world fan could not cope with this signal!')
+            signal = max(0.0, min(1.0, signal))
         return self.P_max * signal
 
     def signal(self, V_dot: float, dp: float) -> float:
