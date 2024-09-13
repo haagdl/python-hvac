@@ -41,7 +41,7 @@ compressor.v_suc = v_suc
 # state_in = compressor.suction_gas
 # state_out = compressor.discharge_gas
 P_cmp = (state_out.h - state_in.h) * compressor.m_dot
-eta_vol = compressor.eta_vol
+eta_vol = compressor.volumetric_efficiency
 P_cpm_model = compressor.W_dot
 print(f'Compressor power: {P_cmp.to("kW")}')
 print(f'Compressor power model: {P_cpm_model.to("kW")}')

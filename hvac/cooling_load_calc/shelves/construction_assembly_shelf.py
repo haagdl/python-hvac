@@ -161,7 +161,7 @@ class ConstructionAssemblyShelf:
                         layer.geometry.t.to(cls.units['t']).m,
                         layer.R.to(cls.units['R']).m,
                         layer.U.to(cls.units['U']).m,
-                        layer.C.to(cls.units['C']).m
+                        layer.clearance_fraction.to(cls.units['C']).m
                     ])
                 multi_index_arr.append([ca.ID, 'global'])
                 data.append([
