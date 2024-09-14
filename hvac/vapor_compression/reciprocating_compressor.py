@@ -86,6 +86,8 @@ class ReciprocatingCompressor:
         self.specific_volume_suction = 1 / state_evaporation_superheated.rho
         self.speed = speed.to('1/s')
 
+        return self.m_dot_refrigerant, self.W_dot
+
     @property
     def volumetric_efficiency(self) -> Quantity:
         volumetric_efficiency = (1.0 - self.clearance_fraction *
