@@ -101,7 +101,8 @@ class ReciprocatingCompressor:
 
     @property
     def W_dot(self) -> Quantity:
-        W_dot = self.m_dot_refrigerant * (self.discharge_gas.h - self.suction_gas.h)
+        W_dot = self.m_dot_refrigerant * (self.state_refrigerant_out.h -
+                                          self.state_refrigerant_in.h)
         return W_dot
 
     @property
@@ -123,13 +124,7 @@ class ReciprocatingCompressor:
     @property
     def temperature_out(self) -> Quantity:
         return self.temperature_in * (self.pressure_condensation / self.pressure_evaporation) ** (
-                (self.polytropic_exponent - 1) / self.polytropic_exponent).T
-
-    @property
-    def Q_dot(self) -> Quantity:
-        Q_dot = self.m_dot_refrigerant * (self.state_refrigerant_out.h -
-                                          self.state_refrigerant_in.h)
-        return Q_dot
+                (self.polytropic_exponent - 1) / self.polytropic_exponent)
 
 if __name__ == '__main__':
     refrigerant = Fluid('R134a')
@@ -144,3 +139,4 @@ if __name__ == '__main__':
                 temperature_condensation=Quantity(60.0, 'degC'),
                 superheating=Quantity(5.0, 'K'))
     print(f'Compressor speed: {compressor.m_dot_refrigerant.to("kg/h")}')
+    print(f'Compressor speed: {compressor.W_dot.to("kW")}')
