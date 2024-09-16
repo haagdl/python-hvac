@@ -19,7 +19,6 @@ from enum import IntEnum
 import numpy as np
 from hvac import Quantity
 from hvac.fluids import Fluid, HumidAir, CP_HUMID_AIR, CoolPropError
-from scipy.optimize import fsolve
 
 
 Q_ = Quantity
@@ -267,7 +266,6 @@ class AbstractHeatExchanger(ABC):
             + self.BF * (self.air_in.Tdb.to('K') - air_adp.Tdb.to('K'))
         )
         air_out = HumidAir(Tdb=T_a_out, h=i_a_out)
-
         return air_out
 
     @property
