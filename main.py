@@ -38,50 +38,23 @@ evaporator = PlainFinTubeCounterFlowAirEvaporator(
     N_fin=1 / Q_(3.175, 'mm'),  # fin density
     k_fin=Q_(237, 'W / (m * K)'),  # conductivity of fin material
 )
-compressor = ReciprocatingCompressor(
-    V_dis=Q_(25.00, 'cm^3'),
-    C=Q_(0.02, 'frac'),
-    speed=Q_(50, '1 / s'),
-    n=Q_(1.2, 'dimensionless'),
-    refrigerant=R134a,
-    eta_is=Q_(1.0, 'frac'),
-    eta_mech=Q_(1.0, 'frac'),
-    eta_el=Q_(1.0, 'frac'),
-)
 
-machine = SingleStageVaporCompressionMachine(
-    compressor=compressor,
-    condenser=condenser,
-    evaporator=evaporator,
-    refrigerant=R134a,
+
+evp_air_in = HumidAir(Tdb=Q_(30.0, 'degC'),
+                      W=Q_(0.0, 'g/kg'))
+evp_air_m_dot = Q_(500, 'm^3/h') * evp_air_in.rho
+
+
+state_in = R134a(T=Quantity(5.0, 'degC'), x=Q_(0.0, 'frac'))
+
+
+# test evaporator
+m_dot_evaporator = evaporator.solve(
+    air_in=evp_air_in,
+    air_m_dot=evp_air_m_dot,
+    rfg_in=state_in,
     dT_sh=Q_(5.0, 'K'),
-    n_cmp_min=Q_(30, '1 / s'),
-    n_cmp_max=Q_(50, '1 / s'),
+    rfg_m_dot_ini=Q_(10.0, 'kg/h'),
 )
-evp_air_in = HumidAir(Tdb=Q_(35.0, 'degC'),
-                      RH=Q_(50.0, 'pct'))
-evp_air_m_dot = Q_(200, 'm^3/h') * evp_air_in.rho
-cnd_air_in = HumidAir(Tdb=Q_(35.0, 'degC'),
-                      RH=Q_(50.0, 'pct'))
-cnd_air_m_dot = Q_(1000.0, 'm^3/h') * cnd_air_in.rho
-T_evp_ini = Q_(8.614, 'degC')
-T_cnd_ini = Q_(67.942, 'degC')
-output = machine.rate(
-    evp_air_in=evp_air_in,
-    evp_air_m_dot=evp_air_m_dot,
-    cnd_air_in=cnd_air_in,
-    cnd_air_m_dot=cnd_air_m_dot,
-    n_cmp=Q_(50, '1 / s'),
-    T_evp_ini=T_evp_ini,
-    T_cnd_ini=T_cnd_ini,
-)
-print(output.to_text())
-
-# output = machine.balance_by_speed(
-#     evp_air_in=evp_air_in,
-#     evp_air_m_dot=evp_air_m_dot,
-#     cnd_air_in=cnd_air_in,
-#     cnd_air_m_dot=cnd_air_m_dot,
-#     T_evp=T_evp_ini,
-#     T_cnd=T_cnd_ini,
-# )
+print(evaporator.air_in)
+print(evaporator.air_out)
