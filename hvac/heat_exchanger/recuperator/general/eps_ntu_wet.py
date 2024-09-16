@@ -268,6 +268,8 @@ class AbstractHeatExchanger(ABC):
         air_out = HumidAir(Tdb=T_a_out, h=i_a_out)
         return air_out
 
+    # try change in air_out
+
     @property
     def UA_ext_wet(self) -> Quantity:
         UA_ext_wet = self.NTU * self.m_dot_a
