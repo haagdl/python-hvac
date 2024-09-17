@@ -4,7 +4,7 @@ from hvac.fluids import HumidAir, Fluid, CoolPropWarning
 
 warnings.filterwarnings('ignore', category=CoolPropWarning)
 
-from hvac.heat_exchanger.recuperator.fintube.continuous_fin import PlainFinTubeCounterFlowAirEvaporator as Evaporator
+from hvac.heat_exchanger.recuperator.fintube.continuous_fin.air_evaporator_dry import PlainFinTubeCounterFlowAirEvaporator as Evaporator
 from hvac.charts import PsychrometricChart
 from hvac.air_conditioning import AirConditioningProcess
 
@@ -15,11 +15,11 @@ Q_ = Quantity
 R134a = Fluid('R134a')
 
 evp = Evaporator(
-    W_fro=Q_(0.731, 'm'),         # width of frontal area
-    H_fro=Q_(0.244, 'm'),         # height of frontal area
-    N_rows=3,                     # number of rows
+    W_fro=Q_(0.5, 'm'),         # width of frontal area
+    H_fro=Q_(0.5, 'm'),         # height of frontal area
+    N_rows=5,                     # number of rows
     S_trv=Q_(25.4, 'mm'),         # vertical distance between tubes
-    S_lon=Q_(22.0, 'mm'),         # horizontal distance between tubes
+    S_lon=Q_(50.0, 'mm'),         # horizontal distance between tubes
     D_int=Q_(8.422, 'mm'),        # inner tube diameter
     D_ext=Q_(10.2, 'mm'),         # outer tube diameter
     t_fin=Q_(0.3302, 'mm'),       # fin thickness
@@ -27,27 +27,21 @@ evp = Evaporator(
     k_fin=Q_(237, 'W / (m * K)')  # conductivity of fin material
 )
 
-cnd_rfg_sat_liq = R134a(T=Q_(50, 'degC'), x=Q_(0, 'frac'))
-P_cnd = cnd_rfg_sat_liq.P
+cnd_rfg_sat_liq = R134a(T=Q_(60, 'degC'), x=Q_(0.0, 'frac'))
 
-dT_sc = Q_(5, 'K')
 
-cnd_rfg_out = R134a(T=cnd_rfg_sat_liq.T.to('K') - dT_sc, P=P_cnd)
+evp_rfg_in = R134a(T=Q_(10, 'degC'), x=Q_(0.1, 'frac'))
 
-evp_rfg_sat_vap = R134a(T=Q_(5, 'degC'), x=Q_(1, 'frac'))
-P_evp = evp_rfg_sat_vap.P
+for rh in np.linspace(50., 50., 1):
+    air_in = HumidAir(Tdb=Q_(50.0, 'degC'), RH=Q_(rh, 'pct'))
 
-evp_rfg_in = R134a(P=P_evp, h=cnd_rfg_out.h)
-
-for rh in np.linspace(30.0, 80.0, 7):
-    air_in = HumidAir(Tdb=Q_(24.0, 'degC'), RH=Q_(rh, 'pct'))
-
+    m_dot = Q_(1000.0, 'kg / hr')
     rfg_m_dot = evp.solve(
         air_in=air_in,
-        air_m_dot=Q_(1500, 'kg / hr'),
+        air_m_dot=m_dot,
         rfg_in=evp_rfg_in,
-        dT_sh=Q_(10, 'K'),
-        rfg_m_dot_ini=Q_(138.854, 'kg / hr'),
+        dT_sh=Q_(5.0, 'K'),
+        rfg_m_dot_ini=Q_(8.0, 'kg / hr'),
     )
 
     water_in = (air_in.W.to('kg / kg') *  Q_(1500, 'kg / hr')).to('g / h')
@@ -62,4 +56,18 @@ for rh in np.linspace(30.0, 80.0, 7):
         f"dP_air = {evp.air_dP.to('Pa'):~P.0f}\n"
         f"superheating flow length = {evp.superheating_region.L_flow.to('mm'):~P.0f}\n"
         f"condensate = {condensate:~P.3f}\n"
+    )
+
+    evp_process = AirConditioningProcess(
+        air_in=air_in,
+        air_out=evp.air_out,
+        m_da=m_dot,
+    )
+    print(
+        f"- ADP: {evp_process.ADP}",
+        f"- contact factor = {evp_process.beta.to('pct'):~P.1f}",
+        f"- sensible cooling capacity = {evp_process.Q_sen.to('kW'):~P.3f}",
+        f"- latent cooling capacity = {evp_process.Q_lat.to('kW'):~P.3f}",
+        f"- SHR = {evp_process.SHR.to('pct'):~P.1f}",
+        sep='\n'
     )

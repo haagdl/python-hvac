@@ -87,17 +87,26 @@ class HeatExchangerCore:
         self.internal.rfg = rfg_mean
         self.external.m_dot = air_m_dot
         self.external.air = air_mean
+
         self.T_wall = self.__find_wall_temperature(Q_dot)
         self.h_int = self.internal.heat_transfer_coeff(Q_dot)
         self.R_int = self.internal.thermal_resistance(self.h_int)
+
+        # Calculate external heat transfer coefficient for dry surface
         self.h_ext = self.external.heat_transfer_coeff(self.T_wall)
         self.R_ext = self.external.thermal_resistance(self.h_ext)
-        self.R_tot = self.R_int + self.R_ext
-        # Note: The thermal conduction resistance of the heat exchanger body
-        # is ignored, and fouling is not being taken into account.
-        self.UA = 1 / self.R_tot
-        self.dP_ext = self.external.pressure_drop(air_in.rho, air_out.rho, self.T_wall)
+
+        # Calculate fin efficiency for dry conditions
         self.eta_surf = self.external.eta_surf(self.h_ext)
+
+        # Adjust R_ext to account for fin efficiency
+        R_ext_finned = self.R_ext / self.eta_surf  # NEW LINE
+
+        # Overall thermal resistance and UA value
+        self.R_tot = self.R_int + R_ext_finned  # MODIFIED LINE
+        self.UA = 1 / self.R_tot
+
+        self.dP_ext = self.external.pressure_drop(air_in.rho, air_out.rho, self.T_wall)
         return {
             'h_int': self.h_int,
             'h_ext': self.h_ext,
@@ -570,6 +579,10 @@ class BoilingRegion:
         entering liquid/vapor mixture completely into saturated vapor, given
         the available flow length `L_flow` of the boiling region.
 
+        New implementation: Humid air is no longer assumed to be fully saturated at
+        the end of the boiling region. Hence, dry heat exchanger calculations are
+        performed in the boiling region.
+
         Parameters
         ----------
         air_in:
@@ -592,29 +605,28 @@ class BoilingRegion:
         -------
         The calculated mass flow rate of refrigerant.
         """
-        # Get the heat flow rate absorbed by the refrigerant stream:
+        # Heat absorbed by the refrigerant stream:
         Q_dot = rfg_m_dot * (self.rfg_out.h - self.rfg_in.h)
 
-        # Initially, assume saturated air leaving the evaporator:
+        # Update air outlet temperature for dry conditions
+        T_air_out = air_in.Tdb - Q_dot / (CP_HUMID_AIR * self.air_m_dot)
         self.air_in = air_in
-        h_air_out = air_in.h - Q_dot / self.air_m_dot
-        air_out = HumidAir(h=h_air_out, RH=Q_(100, 'pct'))
+        air_out = HumidAir(Tdb=T_air_out, W=air_in.W)  # No change in humidity ratio
 
         # Determine by iteration the refrigerant mass flow rate that is needed
         # to balance the heat transfer rate through the heat exchanger with the
         # heat the refrigerant stream must absorb to become a saturated
         # vapor in the boiling region of the evaporator:
-        rfg_mean = self._get_rfg_mean()
         self.core.geometry.length = L_flow
         for i in range(i_max):
+            # Mean states
             air_mean = self._get_air_mean(air_in, air_out)
+            rfg_mean = self._get_rfg_mean()
 
-            # Set the parameters on the heat exchanger core needed to determine
-            # the air-side and refrigerant-side heat transfer coefficients, and
-            # the air-side finned surface efficiency in the superheated region:
+            # Update heat exchanger properties
             hex_props = self.core.hex_properties(
                 air_mean=air_mean,
-                air_in=self.air_in,
+                air_in=air_in,
                 air_out=air_out,
                 rfg_mean=rfg_mean,
                 air_m_dot=self.air_m_dot,
@@ -622,100 +634,46 @@ class BoilingRegion:
                 Q_dot=Q_dot
             )
 
+            # Use dry surface heat exchanger model
             # Determine the heat transfer rate through heat exchanger core:
-            A_ext = self.core.geometry.external.A_tot.to('m ** 2')
-            A_int = self.core.geometry.internal.A_tot.to('m ** 2')
-            cnt_flow_hex = wet.CounterFlowHeatExchanger(
-                m_dot_r=rfg_m_dot,
-                m_dot_a=self.air_m_dot,
-                T_r_in=self.rfg_in.T,
-                T_r_out=self.rfg_out.T,
-                T_r_out_ini=None,
-                P_r=self.rfg_in.P,
-                refrigerant=self.rfg_in.fluid,
-                air_in=air_in,
-                h_ext=hex_props['h_ext'],
-                h_int=hex_props['h_int'],
-                eta_surf_wet=hex_props['eta_surf'],
-                A_ext_to_A_int=A_ext.m / A_int.m,
-                A_ext=A_ext
+            cnt_flow_hex = dry.CounterFlowHeatExchanger(
+                C_cold=rfg_mean.cp * rfg_m_dot,
+                C_hot=air_mean.cp * self.air_m_dot,
+                T_cold_in=self.rfg_in.T,
+                T_hot_in=air_in.Tdb,
+                UA=hex_props['UA']
             )
-            # Note: It is assumed that in the boiling region the air-side heat
-            # transfer surface is fully wet.
 
-            # Determine a new value for the refrigerant mass flow rate:
-            rfg_m_dot_new = cnt_flow_hex.Q / (self.rfg_out.h - self.rfg_in.h)
+            # Update heat transfer rate
+            Q_dot_new = cnt_flow_hex.Q
 
-            # Check the deviation between the current and previous calculated
-            # mass flow rate:
+            # Calculate new refrigerant mass flow rate
+            rfg_m_dot_new = Q_dot_new / (self.rfg_out.h - self.rfg_in.h)
+
+            # Check for convergence
             dev = (rfg_m_dot_new - rfg_m_dot).to('kg / hr')
-
-            logger.debug(
-                f"Boiling region/Iteration {i + 1}: "
-                f"Flow length = {L_flow.to('mm'):~P.3f}. "
-                f"Mass flow rate deviation {dev:~P.3f}."
-            )
-
             if abs(dev) < tol.to('kg / hr'):
-                self.rfg_m_dot = rfg_m_dot
+                self.rfg_m_dot = rfg_m_dot_new
                 self.air_out = air_out
                 self.L_flow = L_flow
-                return rfg_m_dot
+                return rfg_m_dot_new
 
-            # No final solution: Assign the new values and repeat the loop
-            # calculations:
+            # Update variables for next iteration
             rfg_m_dot = rfg_m_dot_new
-            Q_dot = cnt_flow_hex.Q
-            air_out = cnt_flow_hex.air_out
+            Q_dot = Q_dot_new
+            T_air_out = air_in.Tdb - Q_dot / (CP_HUMID_AIR * self.air_m_dot)
+            air_out = HumidAir(Tdb=T_air_out, W=air_in.W)
+            pass
         else:
             raise BoilingError(
                 f"No acceptable solution found after {i_max} iterations."
             ) from None
 
     def _get_air_mean(self, air_in: HumidAir, air_out: HumidAir) -> HumidAir:
-        """
-        Calculates the mean state of air in the boiling region.
-        We need this to calculate the heat transfer coefficients in method
-        `solve`.
-        """
-        # Calculate LMED to determine average air enthalpy:
-        sat_air_in = HumidAir(Tdb=self.rfg_out.T, RH=Q_(100, 'pct'))
-        sat_air_out = HumidAir(Tdb=self.rfg_in.T, RH=Q_(100, 'pct'))
-        dh_in = air_in.h - sat_air_in.h
-        dh_out = air_out.h - sat_air_out.h
-        dh_max = max(dh_in, dh_out)
-        dh_min = min(dh_in, dh_out)
-        if dh_min.m <= 0.0:
-            logger.warning(
-                f"Calculated LMED. `dh_min` was {dh_min.to('kJ / kg'):~P.3g}, "
-                f"but cannot be zero or negative. It has been changed to a "
-                f"positive value near zero."
-            )
-            dh_min = Q_(1.e-12, 'kJ / kg')
-        lmed = (dh_max - dh_min) / math.log(dh_max / dh_min)
-
-        h_sat_air_avg = (sat_air_in.h + sat_air_out.h) / 2
-        h_air_avg = h_sat_air_avg + lmed
-
-        # Calculate LMTD to determine average air temperature:
-        dT_in = air_in.Tdb - self.rfg_out.T
-        dT_out = air_out.Tdb - self.rfg_in.T
-        dT_max = max(dT_in, dT_out)
-        dT_min = min(dT_in, dT_out)
-        if dT_min.m <= 0.0:
-            logger.warning(
-                f"Calculated LMTD. `dT_min` was {dT_min.to('K'):~P.3g}, but "
-                f"cannot be zero or negative. It has been changed to a positive "
-                f"value near zero."
-            )
-            dT_min = Q_(1.e-12, 'K')
-        lmtd = (dT_max - dT_min) / math.log(dT_max / dT_min)
-
-        T_rfg_avg = (self.rfg_in.T + self.rfg_out.T) / 2
-        T_air_avg = T_rfg_avg + lmtd
-
-        # Mean temperature and mean enthalpy determine the mean air state:
-        air_mean = HumidAir(Tdb=T_air_avg, h=h_air_avg)
+        # For dry conditions, use arithmetic mean
+        T_air_avg = (air_in.Tdb + air_out.Tdb) / 2
+        W_air_avg = air_in.W  # Humidity ratio remains constant
+        air_mean = HumidAir(Tdb=T_air_avg, W=W_air_avg)
         return air_mean
 
     def _get_rfg_mean(self) -> FluidState:
@@ -1035,20 +993,13 @@ class PlainFinTubeCounterFlowAirEvaporator:
             "Solving for the operating state of the evaporator..."
         )
         counter = [0]
-        if rfg_m_dot_ini is not None:
-            rfg_m_dot_max = max(
-                self._guess_rfg_m_dot_max().to('kg / hr').m,
-                rfg_m_dot_ini.to('kg / hr').m
-            )
-        else:
-            rfg_m_dot_max = self._guess_rfg_m_dot_max().to('kg / hr').m
         try:
             sol = optimize.root_scalar(
                 self.__fun__,
                 args=(counter,),
                 method='secant',
-                x0=0.6 * rfg_m_dot_max,
-                x1=rfg_m_dot_max,
+                x0=0.6 * rfg_m_dot_ini.to('kg / h').m,
+                x1=rfg_m_dot_ini.to('kg / h').m,
                 xtol=0.01,  # kg/hr
                 rtol=0.001,  # 0.1 %
                 maxiter=20
