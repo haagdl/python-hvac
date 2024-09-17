@@ -18,30 +18,35 @@ evp = Evaporator(
     W_fro=Q_(0.5, 'm'),         # width of frontal area
     H_fro=Q_(0.5, 'm'),         # height of frontal area
     N_rows=5,                     # number of rows
-    S_trv=Q_(25.4, 'mm'),         # vertical distance between tubes
-    S_lon=Q_(50.0, 'mm'),         # horizontal distance between tubes
+    S_trv=Q_(30.0, 'mm'),         # vertical distance between tubes
+    S_lon=Q_(30.0, 'mm'),         # horizontal distance between tubes
     D_int=Q_(8.422, 'mm'),        # inner tube diameter
     D_ext=Q_(10.2, 'mm'),         # outer tube diameter
-    t_fin=Q_(0.3302, 'mm'),       # fin thickness
+    t_fin=Q_(0.1, 'mm'),       # fin thickness
     N_fin=1 / Q_(3.175, 'mm'),    # fin density
     k_fin=Q_(237, 'W / (m * K)')  # conductivity of fin material
 )
 
 cnd_rfg_sat_liq = R134a(T=Q_(60, 'degC'), x=Q_(0.0, 'frac'))
+P_cond = cnd_rfg_sat_liq.P
+dT_sc = Q_(5.0, 'K')
+cnd_rfg_sat_vap = R134a(T=cnd_rfg_sat_liq.T.to('K') - dT_sc, P=P_cond)
 
 
-evp_rfg_in = R134a(T=Q_(10, 'degC'), x=Q_(0.1, 'frac'))
+evp_rfg_in_ = R134a(T=Q_(10, 'degC'), x=Q_(0.0, 'frac'))
+P_evap = evp_rfg_in_.P
+evp_rfg_in = R134a(P=P_evap, h=cnd_rfg_sat_vap.h)
 
-for rh in np.linspace(50., 50., 1):
-    air_in = HumidAir(Tdb=Q_(50.0, 'degC'), RH=Q_(rh, 'pct'))
+for rh in np.linspace(10., 10., 1):
+    air_in = HumidAir(Tdb=Q_(35.0, 'degC'), RH=Q_(rh, 'pct'))
 
-    m_dot = Q_(1000.0, 'kg / hr')
+    m_dot = Q_(500.0, 'kg / hr')
     rfg_m_dot = evp.solve(
         air_in=air_in,
         air_m_dot=m_dot,
         rfg_in=evp_rfg_in,
         dT_sh=Q_(5.0, 'K'),
-        rfg_m_dot_ini=Q_(8.0, 'kg / hr'),
+        rfg_m_dot_ini=Q_(116.411, 'kg / hr'),
     )
 
     water_in = (air_in.W.to('kg / kg') *  Q_(1500, 'kg / hr')).to('g / h')
