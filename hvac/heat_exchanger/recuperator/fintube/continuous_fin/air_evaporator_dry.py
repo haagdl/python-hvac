@@ -91,6 +91,10 @@ class HeatExchangerCore:
         self.R_int = self.internal.thermal_resistance(self.h_int)
         self.h_ext = self.external.heat_transfer_coeff(self.T_wall)
         self.R_ext = self.external.thermal_resistance(self.h_ext)
+
+        # Prevent unphysical solutions during solver iterations (boiling region)
+        self.R_int = Q_(min(self.R_int.magnitude, self.R_ext.magnitude), 'K / W')
+
         self.R_tot = self.R_int + self.R_ext
         # Note: The thermal conduction resistance of the heat exchanger body
         # is ignored, and fouling is not being taken into account.
@@ -127,14 +131,11 @@ class HeatExchangerCore:
         T_int = self.internal.rfg.T.to('K').m  # cold fluid
         T_ext = self.external.air.Tdb.to('K').m  # hot fluid
         if T_ext > T_int:
-            try:
-                sol = optimize.root_scalar(
-                    __eq__,
-                    bracket=(T_int, T_ext)
-                )
-                T_wall = Q_(sol.root, 'K')
-            except:
-                print('T wall exception')
+            sol = optimize.root_scalar(
+                __eq__,
+                bracket=(T_int, T_ext)
+            )
+            T_wall = Q_(sol.root, 'K')
         else:
             T_wall = Q_(T_int, 'K')
         return T_wall
@@ -613,17 +614,7 @@ class BoilingRegion:
 
             # Set the parameters on the heat exchanger core needed to determine
             # the air-side and refrigerant-side heat transfer coefficients, and
-            # the air-side finned surface efficiency in the superheated region:
-            print(
-                f'Air mean {air_mean}\n'
-                f'Air in {air_in}\n'
-                f'Air out {air_out.Tdb.to("degC")}\n'
-                f'Rfg mean {rfg_mean.T.to("degC")}\n'
-                f'Rfg in {self.rfg_in.T.to("degC")}\n'
-                f'Air m dot {self.air_m_dot}\n'
-                f'Rfg m dot {rfg_m_dot.to("kg/h")}\n'
-                f'Q dot {Q_dot.to("W")}\n'
-            )
+            # the air-side finned surface efficiency in the boiling region:
             hex_props = self.core.hex_properties(
                 air_mean=air_mean,
                 air_in=self.air_in,
@@ -634,12 +625,11 @@ class BoilingRegion:
                 Q_dot=Q_dot
             )
 
-            hex_props['UA'] = Q_(hex_props['h_ext'].magnitude, 'watt / kelvin')
+            # hex_props['UA'] = Q_(hex_props['h_ext'].magnitude, 'watt / kelvin')
 
             # Determine the heat transfer rate through heat exchanger core:
             cnt_flow_hex = dry.CounterFlowHeatExchanger(
-                # C_cold=rfg_mean.cp * rfg_m_dot,
-                C_cold=Q_(1e100, 'W / K'),
+                C_cold=Q_(1e10, 'W / K'),  # Assume pseudo-infinite heat capacity for boiling region
                 C_hot=air_mean.cp * self.air_m_dot,
                 T_cold_in=self.rfg_in.T,
                 T_hot_in=self.air_in.Tdb,
@@ -649,9 +639,6 @@ class BoilingRegion:
             # transfer surface is fully dry - no condensation occurs.
 
             # Determine a new value for the refrigerant mass flow rate:
-            print(f'Inside htc {hex_props["h_int"]}')
-            print(f'Outside htc {hex_props["h_ext"]}')
-            print(f'Overall htc {hex_props["UA"]}')
             rfg_m_dot_new = cnt_flow_hex.Q / (self.rfg_out.h - self.rfg_in.h)
 
             # Check the deviation between the current and previous calculated
@@ -659,12 +646,6 @@ class BoilingRegion:
             dev = (rfg_m_dot_new - rfg_m_dot).to('kg / hr')
 
             logger.debug(
-                f"Boiling region/Iteration {i + 1}: "
-                f"Flow length = {L_flow.to('mm'):~P.3f}. "
-                f"Mass flow rate deviation {dev:~P.3f}."
-            )
-
-            print(
                 f"Boiling region/Iteration {i + 1}: "
                 f"Flow length = {L_flow.to('mm'):~P.3f}. "
                 f"Mass flow rate deviation {dev:~P.3f}."
@@ -682,9 +663,6 @@ class BoilingRegion:
             Q_dot = cnt_flow_hex.Q
             T_air_out = air_in.Tdb - Q_dot / (CP_HUMID_AIR * self.air_m_dot)
             air_out = HumidAir(Tdb=T_air_out, W=air_in.W)
-            print(f'Heat transfer rate {Q_dot.to("kW")}')
-            print(f'Boiling zone air outlet {T_air_out.to("degC")}')
-            print(f'Mass flow rate Boiling zone {rfg_m_dot.to("kg/hr")}')
         else:
             raise BoilingError(
                 f"No acceptable solution found after {i_max} iterations."
@@ -907,13 +885,6 @@ class PlainFinTubeCounterFlowAirEvaporator:
         )
 
         logger.debug(
-            f"Evaporator(SHR)/Iteration {i + 1}: "
-            f"Refrigerant mass flow rate = {rfg_m_dot.to('kg / hr'):~P.3f}. "
-            f"Superheating flow length = {L_flow_superheat.to('mm'):~P.3f}. "
-            f"Determine mass flow rate in boiling region..."
-        )
-
-        print(
             f"Evaporator(SHR)/Iteration {i + 1}: "
             f"Refrigerant mass flow rate = {rfg_m_dot.to('kg / hr'):~P.3f}. "
             f"Superheating flow length = {L_flow_superheat.to('mm'):~P.3f}. "
