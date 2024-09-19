@@ -1,12 +1,16 @@
+from scipy.optimize import root_scalar, fsolve
 from hvac import Quantity
 from hvac.fluids import Fluid, FluidState
+from matplotlib import pyplot as plt
+import numpy as np
+
 
 class ReciprocatingCompressor:
     def __init__(
             self,
             volume_displacement: Quantity,
             clearance_fraction: Quantity,
-            polytropic_exponent: float,
+            isentropic_efficiency: Quantity,
             refrigerant: Fluid
     ):
         """
@@ -16,6 +20,8 @@ class ReciprocatingCompressor:
             Displacement volume
         clearance_fraction: Quantity
             Volume fraction that remains in the cylinder after the exhaust stroke
+        isentropic_efficiency: Quantity
+            Isentropic efficiency
         polytropic_exponent: float
             Polytropic exponent
         refrigerant: Fluid
@@ -23,13 +29,14 @@ class ReciprocatingCompressor:
         """
         self.volume_displacement = volume_displacement
         self.clearance_fraction = clearance_fraction
-        self.polytropic_exponent = polytropic_exponent
+        self.isentropic_efficiency = isentropic_efficiency
         self.refrigerant = refrigerant
 
         self.__speed = None
         self.__pressure_evaporation = None
         self.__pressure_condensation = None
         self.__specific_volume_suction = None
+        self.__polytropic_exponent = None
 
     @property
     def speed(self) -> Quantity:
@@ -71,6 +78,17 @@ class ReciprocatingCompressor:
         """Set specific volume of suction gas at compressor inlet."""
         self.__specific_volume_suction = value
 
+    @property
+    def polytropic_exponent(self) -> float:
+        """Get polytropic exponent."""
+        return self.__polytropic_exponent
+
+    @polytropic_exponent.setter
+    def polytropic_exponent(self, value: float):
+        """Set polytropic exponent."""
+        self.__polytropic_exponent = value
+
+
     def __call__(self,
                  speed: Quantity,
                  temperature_evaporation: Quantity,
@@ -85,6 +103,26 @@ class ReciprocatingCompressor:
                                                          P=self.pressure_evaporation)
         self.specific_volume_suction = 1 / state_evaporation_superheated.rho
         self.speed = speed.to('1/s')
+
+        # find polytropic exponent that matches isentropic efficiency
+        def entropy_deviation(polytropic_exponent):
+            self.polytropic_exponent = polytropic_exponent
+            entropy_deviation = (self.state_refrigerant_out.s - self.state_refrigerant_in.s).to(
+                'J / kg / K').magnitude
+            return entropy_deviation
+
+        isentropic_exponent = root_scalar(entropy_deviation, bracket=[1.12, 1.22]).root
+        self.polytropic_exponent = isentropic_exponent
+        W_dot_isentropic = self.W_dot.to('W')
+
+        def isentropic_efficiency_deviation(polytropic_exponent):
+            self.polytropic_exponent = polytropic_exponent
+            W_dot = self.W_dot.to('W')
+            isentropic_efficiency = (W_dot_isentropic / W_dot).magnitude
+            isentropic_efficiency_deviation = isentropic_efficiency - self.isentropic_efficiency.magnitude
+            return isentropic_efficiency_deviation
+
+        self.polytropic_exponent = fsolve(isentropic_efficiency_deviation, isentropic_exponent)[0]
 
         return self.m_dot_refrigerant, self.W_dot
 
@@ -130,15 +168,22 @@ class ReciprocatingCompressor:
 
 if __name__ == '__main__':
     refrigerant = Fluid('R134a')
-    compressor = ReciprocatingCompressor(
-        volume_displacement=Quantity(10.00, 'cm^3'),
-        clearance_fraction=Quantity(0.02, 'frac'),
-        polytropic_exponent=1.2,
-        refrigerant=refrigerant
-    )
-    compressor(speed=Quantity(50.0, '1/s'),
-                temperature_evaporation=Quantity(10.0, 'degC'),
-                temperature_condensation=Quantity(60.0, 'degC'),
-                superheating=Quantity(5.0, 'K'))
-    print(f'Compressor speed: {compressor.m_dot_refrigerant.to("kg/h")}')
-    print(f'Compressor speed: {compressor.W_dot.to("kW")}')
+    isentropic_efficiencies = np.linspace(0.1, 1.0, 11)
+    powers = []
+    for isentropic_efficiency in isentropic_efficiencies:
+        compressor = ReciprocatingCompressor(
+            volume_displacement=Quantity(6.00, 'cm^3'),
+            clearance_fraction=Quantity(0.06, 'frac'),
+            isentropic_efficiency=Quantity(isentropic_efficiency, 'frac'),
+            refrigerant=refrigerant
+        )
+        compressor(speed=Quantity(50.0, '1/s'),
+                    temperature_evaporation=Quantity(0.0, 'degC'),
+                    temperature_condensation=Quantity(60.0, 'degC'),
+                    superheating=Quantity(5.0, 'K'))
+        powers.append(compressor.W_dot.to('W').magnitude)
+    plt.plot(isentropic_efficiencies, powers)
+    plt.xlabel('Isentropic efficiency')
+    plt.ylabel('Power [W]')
+    plt.show()
+
