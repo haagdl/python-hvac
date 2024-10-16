@@ -22,8 +22,6 @@ class ReciprocatingCompressor:
             Volume fraction that remains in the cylinder after the exhaust stroke
         isentropic_efficiency: Quantity
             Isentropic efficiency
-        polytropic_exponent: float
-            Polytropic exponent
         refrigerant: Fluid
             Refrigerant
         """
