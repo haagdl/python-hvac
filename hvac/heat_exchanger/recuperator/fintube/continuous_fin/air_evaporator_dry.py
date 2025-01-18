@@ -975,9 +975,6 @@ class PlainFinTubeCounterFlowAirEvaporator:
         self.air_in = air_in
         self.superheating_region.air_in = air_in
         self.air_m_dot = air_m_dot
-        # update air in with fan dissipation
-        temperature_air_in_ = air_in.Tdb + self.P_fan / (air_m_dot * air_in.cp)
-        self.air_in = HumidAir(Tdb=temperature_air_in_, RH=air_in.RH)
         self.superheating_region.air_m_dot = air_m_dot
         self.boiling_region.air_m_dot = air_m_dot
         self.rfg_in = rfg_in
@@ -1047,19 +1044,3 @@ class PlainFinTubeCounterFlowAirEvaporator:
                     + self.superheating_region.dP_air
             )
             return self.rfg_m_dot
-
-    @property
-    def P_fan(self) -> Quantity:
-        """Electric power consumption of the condenser fan
-
-        Refer to Fan class for details
-
-        Returns
-        -------
-        Quantity
-            Electric power consumed by the condenser fan
-        """
-        volume_flow_rate = (self.air_m_dot / self.air_in.rho)
-        self.fan.V_dot = volume_flow_rate.to('m ^ 3 / h').magnitude
-        self.fan.pressure_loss = self.air_dP.to('Pa').magnitude
-        return Q_(self.fan.power, 'W')
