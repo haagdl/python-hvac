@@ -975,6 +975,9 @@ class PlainFinTubeCounterFlowAirEvaporator:
         self.air_in = air_in
         self.superheating_region.air_in = air_in
         self.air_m_dot = air_m_dot
+        # update air in with fan dissipation
+        temperature_air_in_ = air_in.Tdb + self.P_fan / (air_m_dot * air_in.cp)
+        self.air_in = HumidAir(Tdb=temperature_air_in_, RH=air_in.RH)
         self.superheating_region.air_m_dot = air_m_dot
         self.boiling_region.air_m_dot = air_m_dot
         self.rfg_in = rfg_in
