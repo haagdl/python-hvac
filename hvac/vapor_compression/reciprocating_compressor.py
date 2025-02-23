@@ -168,6 +168,8 @@ if __name__ == '__main__':
     refrigerant = Fluid('R134a')
     isentropic_efficiencies = np.linspace(0.1, 1.0, 11)
     powers = []
+    temperatures_discharge = []
+    pressure_discharge = []
     for isentropic_efficiency in isentropic_efficiencies:
         compressor = ReciprocatingCompressor(
             volume_displacement=Quantity(6.00, 'cm^3'),
@@ -180,8 +182,25 @@ if __name__ == '__main__':
                     temperature_condensation=Quantity(60.0, 'degC'),
                     superheating=Quantity(5.0, 'K'))
         powers.append(compressor.W_dot.to('W').magnitude)
+        temperatures_discharge.append(compressor.temperature_out.to('degC').magnitude)
+        pressure_discharge.append(compressor.pressure_condensation.to('bar').magnitude)
     plt.plot(isentropic_efficiencies, powers)
     plt.xlabel('Isentropic efficiency')
     plt.ylabel('Power [W]')
     plt.show()
+    plt.close()
+
+    plt.plot(isentropic_efficiencies, temperatures_discharge)
+    plt.xlabel('Isentropic efficiency')
+    plt.ylabel('Discharge temperature [°C]')
+    plt.show()
+    plt.close()
+
+    plt.plot(isentropic_efficiencies, pressure_discharge)
+    plt.xlabel('Isentropic efficiency')
+    plt.ylabel('Discharge pressure [bar]')
+    plt.show()
+    plt.close()
+
+
 
