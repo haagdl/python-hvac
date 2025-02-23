@@ -67,7 +67,7 @@ class Fan:
 
         return self.V_dot_0Pa * signal * np.sqrt(1 - dp / available_dp)
 
-    def P(self, signal: float) -> float:
+    def P(self, signal: float, *args, **kwargs) -> float:
         """
         Compute the electrical power consumption for a given control signal.
 
@@ -84,6 +84,7 @@ class Fan:
         float
             Electrical power consumption in W.
         """
+        _ = args, kwargs  # Unused arguments; maintain compatibility with legacy methods
         if not 0 <= signal <= 1:
             print(f"FanWarning: Signal {round(signal, 2)} is clipped to [0, 1]!")
             signal = max(0.0, min(1.0, signal))
