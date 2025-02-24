@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
+
 class Fan:
     def __init__(self, V_dot_0Pa: float = 1063.0, dp_max: float = 500.0, P_max: float = 110.0):
         """
@@ -50,20 +51,14 @@ class Fan:
         -------
         float
             Volumetric flow rate in m^3/h.
-
-        Raises
-        ------
-        ValueError
-            If the pressure loss exceeds the available pressure head at the given speed.
         """
-        # Clip the signal to [0, 1]
         if not 0 <= signal <= 1:
-            print(f"FanWarning: Signal {round(signal, 2)} is clipped to [0, 1]!")
-            signal = max(0.0, min(1.0, signal))
+            print(f"FanWarning: Required signal {round(signal, 2)} exceeds 1!")
 
-        available_dp = self.dp_max * signal**2
+        available_dp = self.dp_max * signal ** 2
         if dp > available_dp:
-            raise ValueError("Pressure difference exceeds the available pressure head at this speed.")
+            print(f"FanWarning: Pressure loss {round(dp, 2)} exceeds available "
+                  f"head {round(available_dp, 2)}!")
 
         return self.V_dot_0Pa * signal * np.sqrt(1 - dp / available_dp)
 
@@ -86,9 +81,8 @@ class Fan:
         """
         _ = args, kwargs  # Unused arguments; maintain compatibility with legacy methods
         if not 0 <= signal <= 1:
-            print(f"FanWarning: Signal {round(signal, 2)} is clipped to [0, 1]!")
-            signal = max(0.0, min(1.0, signal))
-        return self.P_max * signal**3
+            print(f"FanWarning: Required signal {round(signal, 2)} exceeds 1!")
+        return self.P_max * signal ** 3
 
     def signal(self, V_dot: float, dp: float) -> float:
         """
@@ -115,9 +109,9 @@ class Fan:
         float
             Required control signal (0 ≤ signal ≤ 1).
         """
-        required_signal = np.sqrt((V_dot / self.V_dot_0Pa)**2 + dp / self.dp_max)
+        required_signal = np.sqrt((V_dot / self.V_dot_0Pa) ** 2 + dp / self.dp_max)
         if required_signal > 1:
-            raise ValueError("The required control signal exceeds 1. Check if the desired flow rate and pressure loss are achievable.")
+            print(f"FanWarning: Required signal {round(required_signal, 2)} exceeds 1!")
         return required_signal
 
 
