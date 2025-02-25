@@ -1,9 +1,15 @@
+"""
+Simple fan model for volumetric flow rate and power consumption
+
+(C) 2025 Daniel Haag. All rights reserved.
+"""
+
+# 3rd party imports
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 class Fan:
-    def __init__(self, V_dot_0Pa: float = 1063.0, dp_max: float = 500.0, P_max: float = 110.0):
+    def __init__(self, V_dot_0Pa: float = 600.0, dp_max: float = 230.0, P_max: float = 80.0):
         """
         Initialize a fan object based on nominal datasheet values.
 
@@ -52,11 +58,11 @@ class Fan:
         float
             Volumetric flow rate in m^3/h.
         """
-        if not 0 <= signal <= 1:
+        if not 0 <= signal <= 1.1: # 10 % tolerance for interoperability
             print(f"FanWarning: Required signal {round(signal, 2)} exceeds 1!")
 
         available_dp = self.dp_max * signal ** 2
-        if dp > available_dp:
+        if 1.10 * dp > available_dp: # 10 % tolerance for interoperability
             print(f"FanWarning: Pressure loss {round(dp, 2)} exceeds available "
                   f"head {round(available_dp, 2)}!")
 
@@ -80,8 +86,6 @@ class Fan:
             Electrical power consumption in W.
         """
         _ = args, kwargs  # Unused arguments; maintain compatibility with legacy methods
-        if not 0 <= signal <= 1:
-            print(f"FanWarning: Required signal {round(signal, 2)} exceeds 1!")
         return self.P_max * signal ** 3
 
     def signal(self, V_dot: float, dp: float) -> float:
@@ -110,7 +114,7 @@ class Fan:
             Required control signal (0 ≤ signal ≤ 1).
         """
         required_signal = np.sqrt((V_dot / self.V_dot_0Pa) ** 2 + dp / self.dp_max)
-        if required_signal > 1:
+        if required_signal > 1.10:  # 10 % tolerance for interoperability
             print(f"FanWarning: Required signal {round(required_signal, 2)} exceeds 1!")
         return required_signal
 
