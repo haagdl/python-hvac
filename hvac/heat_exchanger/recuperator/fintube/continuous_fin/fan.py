@@ -86,7 +86,10 @@ class Fan:
             Electrical power consumption in W.
         """
         _ = args, kwargs  # Unused arguments; maintain compatibility with legacy methods
-        return self.P_max * signal ** 3
+        efficiency_derating = max(signal, 0.1)  # 10% min efficiency level
+        ideal_power = self.P_max * signal ** 3
+
+        return ideal_power / efficiency_derating
 
     def signal(self, V_dot: float, dp: float) -> float:
         """
@@ -121,4 +124,9 @@ class Fan:
 
 if __name__ == '__main__':
     # Example usage:
-    fan = Fan(V_dot_0Pa=1000.0, dp_max=500.0, P_max=100.0)
+    fan = Fan(V_dot_0Pa=1050.0, dp_max=340.0, P_max=152.50)
+    signal = 0.7
+    V_dot = fan.V_dot(signal=signal, dp=80.0)
+    P = fan.P(signal=signal)
+    print(f"Volumetric flow rate: {V_dot:.2f} m^3/h")
+    print(f"Electrical power consumption: {P:.2f} W")
