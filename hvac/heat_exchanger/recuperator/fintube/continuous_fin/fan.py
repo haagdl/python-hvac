@@ -33,10 +33,14 @@ class Fan:
             Maximum static pressure (at full speed) in Pa.
         P_max : float
             Maximum electrical power in W (at full speed).
+        beta : float
+            Fraction of P_max consumed at zero speed due to inefficiency (0 ≤ beta < 1).
+            Default is 0.30 (i.e., 30% base-load losses).
         """
         self.V_dot_0Pa = V_dot_0Pa
         self.dp_max = dp_max
         self.P_max = P_max
+        self.beta = 0.30
 
     def V_dot(self, signal: float, dp: float) -> float:
         """
@@ -73,7 +77,8 @@ class Fan:
         Compute the electrical power consumption for a given control signal.
 
         The power consumption is modeled as:
-            P = P_max * signal^3
+            P = P_max * (beta + (1 - beta) * signal^3)
+        This accounts for a base-load loss (beta) at zero speed.
 
         Parameters
         ----------
@@ -86,10 +91,7 @@ class Fan:
             Electrical power consumption in W.
         """
         _ = args, kwargs  # Unused arguments; maintain compatibility with legacy methods
-        efficiency_derating = max(signal, 0.1)  # 10% min efficiency level
-        ideal_power = self.P_max * signal ** 3
-
-        return ideal_power / efficiency_derating
+        return self.P_max * (self.beta + (1 - self.beta) * signal ** 3)
 
     def signal(self, V_dot: float, dp: float) -> float:
         """
@@ -125,8 +127,8 @@ class Fan:
 if __name__ == '__main__':
     # Example usage:
     fan = Fan(V_dot_0Pa=1050.0, dp_max=340.0, P_max=152.50)
-    signal = 0.7
-    V_dot = fan.V_dot(signal=signal, dp=80.0)
+    signal = 0.8
+    V_dot = fan.V_dot(signal=signal, dp=60.0)
     P = fan.P(signal=signal)
     print(f"Volumetric flow rate: {V_dot:.2f} m^3/h")
     print(f"Electrical power consumption: {P:.2f} W")
